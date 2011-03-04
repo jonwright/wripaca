@@ -1,0 +1,87 @@
+WriPaP: Wright's Parallel Pixel Programs
+========================================
+
+
+Jon Wright 2011.
+
+Does parallel computations on 2D images of pixels.
+Most of the ideas are taken from other peoples software
+packages, books, papers etc. 
+
+
+Source code layout:
+===================
+  README    : This file
+
+  include/      Header file giving the public API for C users
+    wripaca.h 
+
+  src/          Implementation file including private things in C 
+    wripaca.c : 
+
+  swig/         Interfaces for scripting languages (eg python)
+    wripaca.i   Swig interface definition
+    Makefile    Generate the various interfaces
+    python/
+        setup.py
+
+  build/        Directory where everything is compiled to make exe
+    Makefile
+    platform_name/
+        make.inc
+
+
+Build system:
+=============
+
+We identify the basic source code files which do not depend 
+on the compiler or architecture.
+Then there are a series of targets which do depend on the 
+compiler and architecture.
+Also recipes to get from one to the other.
+
+We would like to build the code for multiple platforms.
+Test it to see if it is running OK.
+Benchmark it to see what the performance is like.
+We expect to use openmp when it is available, also opencl.
+
+The python binding should in independent of *any*  
+python library except for ctypes which does the binding (swig??)
+
+
+
+
+
+
+
+Some compiler switches for performance:
+
+Windows MSVC (v9 2008):
+ cl.exe /Ox /fp:fast /openmp WriPaP.c
+
+Windows gcc 4.5.1 (TDM 64 bit):
+ gcc -ffast-math -fopenmp -O3 -march=native WriPaP.c -o wripap.exe
+
+Windows lcc-win:
+ lcc64.exe WriPaP.c
+ lcclnk64.exe WriPaP.obj
+
+Linux gcc (3.4.6), NO OPENMP:
+ gcc -ffast-math -O3 -lm WriPaP.c -o wripap.exe
+
+Linux gcc (4.1.0):
+ gcc4 -fopenmp -ffast-math -O3 WriPaP.c -lm -o wripap 
+ 
+Linux intel icc:
+ icc -openmp WriPaP.c -o wripap ; time ./wripap
+
+Linux Portland Group:
+ pgcc -mp -O3 WriPaP.c -o wripap ; time OMP_NUM_THREADS=2 ./wripap
+
+
+
+Usage:
+    
+You need to define your re-binning problem by creating a pair 
+of bins entities. These are defined by 
+

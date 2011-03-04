@@ -1,0 +1,4 @@
+
+import wripaca
+
+wripaca.test()
