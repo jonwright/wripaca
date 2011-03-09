@@ -19,10 +19,6 @@
  */
 
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -39,10 +35,6 @@
  * binning as a function of the other dimensions bin (Peter's fazit idea)
  */
 
-/* Defining verbose means a single pixel is processed and info
- * dumped on stdout
- */
-#define verbose 0
 
 /**
  * To deal with problems in a cleaner way for gui etc
@@ -371,8 +363,6 @@ int polygon_cut( polygon *p, polygon *e, polygon *r,
                 IFOK( polygon_cut_edge( p, prev, i, dim, bound, e ));
                 /* Now, e has a new point, should be edge of thisbin */
                 e->bin[2*(e->np-1) + dim] = thisbin;
-                if( (verbose == 1) &&  (dim == 1) ) 
-                    e->bin[2*(e->np-1)] = p->bin[i];
                 /* Copy the new point to the remainder and set the bin */
                 IFOK( polygon_append(r, e, 2*(e->np-1)));
                 r->bin[2*(r->np-1) + dim] = nextbin;
@@ -390,8 +380,6 @@ int polygon_cut( polygon *p, polygon *e, polygon *r,
                 IFOK( polygon_cut_edge(p, prev, i, dim, bound, e));
                 /* Appends the new point directly on e (joins last appended)*/
                 e->bin[2*(e->np-1) + dim] = thisbin;
-                if( (verbose == 1) &&  (dim == 1) ) 
-                    e->bin[2*(e->np-1)] = p->bin[i];
                 /* And copy it to r too */
                 IFOK(polygon_append(r, e, 2*(e->np-1)));
                 r->bin[2*(r->np-1) + dim] = nextbin;
@@ -473,8 +461,7 @@ int dopixel( int i, int j,
         REAL (*get0)(REAL []),
         REAL (*get1)(REAL []),
         bins *b0,
-        bins *b1,
-        FILE* outfile){
+        bins *b1){
 
     polygon *o,*e0,*r0,*e1,*r1,*t; /* Ear-0, Rest-0,
                               * Ear-1, Rest-1 */
@@ -503,9 +490,7 @@ int dopixel( int i, int j,
     for( i0 = o->bin[o->first]; i0 <= max0; i0++){ /* Loop first dim */
         val = getboundary( b0, i0+1 );
         /* FIXME nextbin for eta */
-        if (verbose) polygon_print(o, stdout, "o"); 
         IFOK( polygon_cut( o, e0, r0, 0, i0, i0+1, val ) );
-        if (verbose) polygon_print(e0, stdout, "e0"); 
         /* Now decide looping for dim1 */
         polygon_compute_bins( e0, b1 , 1);
         polygon_setfirst( e0, 1 );
@@ -517,10 +502,8 @@ int dopixel( int i, int j,
             val = getboundary( b1, i1+1); /* FIXME looparound at 180 -> -180 */
             IFOK (polygon_cut( e0, e1, r1, 1, i1, i1+1, val) );
             /* OUTPUT e1 */
-            if (verbose) polygon_print(e1, stdout,"e1"); 
             areasum += polygon_area(e1);
             np++;
-            if (outfile != NULL) polygon_plot( e1, i0, i1, outfile );
 			t = e0; /* swap */
 			e0 = r1;
 			r1 = t;
@@ -533,107 +516,3 @@ int dopixel( int i, int j,
 }
 
 
-
-/**
- * Model tth function as stand-in for testing
- * Distance is 100 mm, center is 0,0
- *
- * @param x[2] is the x/y position on a detector
- * @returns two theta in degrees
- */
-REAL gettth(REAL x[]){
-   REAL val;
-   /* printf("tth x y %f %f\n",x[0],x[1]); */
-   val = atan2( sqrt(x[0]*x[0]+x[1]*x[1]), 100.0) * 180.0/3.14159;
-   return val;
-}
-
-/**
- * Model eta function as stand in for testing
- * center is 0,0
- *
- * @param x[2] is the x/y position on detector
- * @returns eta in degrees
- */
-REAL geteta(REAL x[]){
-    return atan2( x[0], x[1] ) * 180.0/3.14159;
-}
-
-/**
- * Uses openmp to find the time to process a 2K by 2K image
- */
-int testforspeed( bins *bs, bins *bf, 
-        REAL (*gettth)(REAL[]), 
-        REAL (*geteta)(REAL[])){
-    int np, nt, nthreads, i,j;
-    clock_t start, end;
-    REAL elapsed;
-    np = 2048;
-    nt = 0;
-    nthreads = 1;
-    start = clock();
-#pragma omp parallel for private(j) reduction(+:nt)
-    for(i=1;i<np;i++){
-#ifdef _OPENMP
-    if( i==1 ) nthreads = omp_get_num_threads();
-#endif
-        for(j=1;j<np;j++){
-            nt = nt + dopixel(i,j, gettth, geteta, bs, bf, NULL);
-        }
-    }
-    end = clock();
-    elapsed = ((REAL) end - (REAL)start)/((REAL) CLOCKS_PER_SEC);
-    printf("Cutting pixels took %f, %f ms per pixel\n",elapsed,1e3*elapsed/np/np);
-    printf("Got %d fragments, %f per pixel\n",nt,((REAL)nt)/np/np);
-    printf("Used %d threads\n",nthreads);
-    return 0;
-}
-
-/**
- * For a specific pixel i, j this prints the segments to files
- * for plotting with gnuplot
- */
-int testforgnuplot( bins *bs, bins *bf, 
-        REAL (*gettth)(REAL[]), 
-        REAL (*geteta)(REAL[]), int i, int j){
-    int n;
-    clock_t start, end;
-    REAL elapsed;
-    static FILE* outfile;
-
-    outfile = fopen( "surfbin.dat", "w" );
-    start = clock();
-    n = dopixel(i,j, gettth, geteta, bs, bf, outfile);
-    end = clock();
-    elapsed = ((REAL)end - (REAL)start)/(REAL) CLOCKS_PER_SEC;
-    fclose(outfile);
-    outfile = fopen( "gnuplot.input","w");
-    fprintf(outfile,"set term win\nset nokey\n");
-    fprintf(outfile,"plot \"surfbin.dat\" i %d u 1:2 w filledcurves closed\n",0);
-    for(i=1;i<n;i++)
-        fprintf(outfile,
-                "replot \"surfbin.dat\" i %d u 1:2 w filledcurves closed\n",
-                i);
-    fclose(outfile);
-    return 0;
-}
-
-void test(){
-    int i,j;
-    bins bs = { 0, 0.1, 90000, 0};
-    bins bf = { -360,  1, 720, 1 };
-
-    i = 1;
-    j = 2;
-    if( !verbose )
-        testforspeed( &bs, &bf, gettth, geteta);
-    else  
-        testforgnuplot(  &bs, &bf, gettth, geteta, i, j); 
-}
-
-int main(int argc, char* argv[]){
-        test();
-        return 0;
-}
-
-/* http://www.azillionmonkeys.com/qed/hash.html */

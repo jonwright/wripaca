@@ -1,0 +1,190 @@
+ctransform
+==========
+
+C code library for ImageD11 transform style computations
+
+- Compute the more general case for angles
+- Compute derivatives
+- Make the current ones faster
+
+Need to define from user input
+- Diffractometer geometry as list of axes & angles and translations
+- Define which is the moving axis during a scan
+- Detector position and geometry for n detectors
+- Wavelength
+
+How to make a library?
+======================
+Computations will be built around sets of parameters and definitions which
+match those currently used in 3dxrd and fable.
+Try to make something which can be re-used from both C and python.
+This means lower level functions having documented argument lists.
+Higher level functions which call these to map the computations into
+the higher level parameter models.
+
+Since these things make non-trivial objects how should they be set up?
+
+eg: 
+
+diffractometer gives orientation and position of the sample.
+
+grain gives orientation matrix and position of the grain w.r.t to sample.
+
+detector gives position of pixels in 3D space.
+
+Source gives the wavelength, perhaps beam profile for intensity computations.
+
+A diffraction peak uses each of these.
+
+Put these together in other code for fitting, not necessarily here.
+
+An origin choice might be necessary? Is the origin in the diffractometer, the 
+detector, or the source. Or is it a further thing to be added? 
+
+
+A grain, in common with a source, may have an extent in space and angle.
+
+A detector has a point spread, and pixel has a finite area.
+
+Use cases
+=========
+
+Sand fitting. Set of peaks having both omega and samy positions for diffractometer.
+- x/y positions in detector space of diffraction spot
+- omega/samx positions of diffractometer to place grain
+- implied source position
+
+Grain mapping. Computation of pixel-by-pixel intensity on multi-detectors for 3D Rietveld.
+- x/y position of pixel in grain map is projected to detector
+- source position/size/divergence is convoluted
+
+Topo-tomo and single crystal. 
+Computation of diffractometer angles to find/move peaks.
+- Given orientation matrix
+- Find sets of motor positions which orient the diffraction vector
+
+Affine transformations
+======================
+
+A peaks on the sample and detector can both be found by affine transformations
+
+x' = Ax + b
+
+4x4 matrix:
+
+[x',1] = [[A | b][0..0|1]] [x|1]
+
+Inverse:
+
+[x,1] = [[A-1 | - A-1.b][0..0|1]] [x'|1]
+
+or
+
+x = A-1 . x' - A-1.b = A-1 ( x - b )
+
+
+Affine toolbox
+==============
+
+Construct affine transformation matrices from user style descriptions.
+These might be axis angle for rotations. Or matrices. etc. Parameterise
+the constructions in terms of some meaningful set of parameters.
+
+Implement a sequence of transformations A.B.C....
+
+Find the derivatives with respect to parameters after the sequence.
+
+Example: 
+For a rotation axis we have an axis direction and magnitude of rotation.
+This could equally be a series of 3 axes where the first two are orthogonal to
+the first and approximately zero.
+
+Desires:
+-Pure C
+-Fast
+-Simple
+-Stable
+
+The 1 is implied.
+
+
+
+
+
+
+Diffractometer
+==============
+
+Setting up inputs will be
+- parameter file
+- Total number of axes
+- foreach axis:
+- pure rotation or pure translation or general affine
+- for rotation axes, the axis definition and default position (not necessarily zero)
+- for translations, the direction and default position
+- which axis is the one that is moving during a default scan
+- which order the axes are stacked in (which depends on which)
+- define an origin reference for the co-ordinate system
+
+Computations to be carried out
+- Find the position and orientation of the sample given a set of diffractometer motor positions.
+- Find the derivative of the position & orientation for each positioning parameter.
+- Find the positioning parameter(s) for a given sample orientation and position
+
+Examples
+- 3dxrd/fable
+- EH1 frelon2k with huber phi
+- New EH3 huber diffractometer with 3D detector
+
+Detector
+========
+
+Assume a grid of pixels indexable as a 2D contiguous binary array
+
+Setting up inputs will be
+- spatial mapping functions of i,j in memory to x,y in space
+- position of origin pixel
+- direction of detector x/y axes
+
+The detector probably needs to reference to co-ordinate system of the diffractometer.
+Or define it's own origin.
+
+Thus, the detector tilts in fable/3dxrd are the link between the detector 
+co-ordinate system and the origin. We could equally well place the origin
+in the detector and consider a tilted beam. The tilt is a linking geometry 
+between detector and diffractometer/beam.
+
+Source
+======
+
+Sources: A parallel beam is at infinity. A converging (focussed beam) has a focal
+point behind the sample, beam going into it. A conventional source has a 
+focal point at the source and beam coming out of it. So a source has a sign or 
+direction, spatial extent and angular extent. Bandpass also.
+
+
+Diffraction geometry
+====================
+
+We have 3 points. The source, the crystal and the detection point. 
+Source to sample is direction is kin.
+Sample to detector direction is kout.
+Vector along kout-kin is in direction of scattering vector.
+Length is 1/wavelength.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -85,7 +85,10 @@ void polygon_create(polygon *, int , int ,
         REAL (*)(REAL []),
         REAL (*)(REAL []));
 
-
-void test();
+int dopixel( int , int ,
+        REAL (*)(REAL []),
+        REAL (*)(REAL []),
+        bins *,
+        bins *);
 
 
