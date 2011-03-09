@@ -1,6 +1,8 @@
 
 EXE = .exe
-RM = del
-/ = $(strip \)
+RM = cmd /C del
+MKDIR = cmd /C mkdir
+
+S = $(strip \ )
 
 

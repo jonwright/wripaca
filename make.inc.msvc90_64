@@ -1,10 +1,8 @@
 
-
-INCDIR = include
-/ = $(strip \)
 CC = cl
 CFLAGS = /Ox /fp:fast /openmp /I $(INCDIR)
-MO = /Fe
-EXE = .exe
-RM = del
+MC = /c
+MOBJ = /Fo
+MEXE = /Fe
+OBJ = .obj
 

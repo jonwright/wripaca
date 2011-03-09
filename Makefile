@@ -1,27 +1,43 @@
 
-TARGET = msvc90_64
+COMPILER = msvc90_64
+PLATFORM = win
 
-include make.inc.$(TARGET)
 
-	
-all : $(TARGET)  $(TARGET)/bin \
-       	$(TARGET)/bin/testaffine$(EXE) \
-	$(TARGET)/bin/testwripaca$(EXE)
+INCDIR = include
 
-$(TARGET): 
-	mkdir $(TARGET)
+include platform.inc.$(PLATFORM)
+include make.inc.$(COMPILER)
 
-$(TARGET)/bin:
-	cd  $(TARGET) && mkdir bin
+# Root directory for building
+R = builds$(S)$(PLATFORM)-$(COMPILER)
 
-$(TARGET)/bin/testaffine$(EXE) : test/testaffine.c src/affine.c
-	$(CC) $(CFLAGS) $^ $(MO)$@	
+$(R):
+	echo $(PLATFORM) $(COMPILER) $(R)
+	$(MKDIR) $(R)$(S)bin
+	$(MKDIR) $(R)$(S)test
+	$(MKDIR) $(R)$(S)src
 
-$(TARGET)/bin/testwripaca$(EXE) : test/testwripaca.c src/wripaca.c
-	$(CC) $(CFLAGS) $^ $(MO)$@	
+$(R)$(S)src$(S)affine$(OBJ) : src$(S)affine.c include$(S)affine.h
+	$(CC) $(CFLAGS) $(MC) $< $(MOBJ)$@	
 
-clean:
-	cd $(TARGET)/bin && $(RM) testwripaca$(EXE) $(RM) testaffine$(EXE) && cd .. 
+$(R)$(S)test$(S)testaffine$(OBJ) : test$(S)testaffine.c include$(S)affine.h
+	$(CC) $(CFLAGS) $(MC) $< $(MOBJ)$@	
 
+$(R)$(S)bin$(S)testaffine$(EXE) : $(R)$(S)src$(S)affine$(OBJ) $(R)$(S)test$(S)testaffine$(OBJ)
+	$(CC) $(CFLAGS) $^ $(MEXE)$@	
+
+$(R)$(S)src$(S)wripaca$(OBJ) : src$(S)wripaca.c include$(S)wripaca.h
+	$(CC) $(CFLAGS) $(MC) $< $(MOBJ)$@
+
+$(R)$(S)test$(S)testwripaca$(OBJ) : test$(S)testwripaca.c include$(S)wripaca.h
+	$(CC) $(CFLAGS) $(MC) $< $(MOBJ)$@	
+
+$(R)$(S)bin$(S)testwripaca$(EXE) : $(R)$(S)src$(S)wripaca$(OBJ) $(R)$(S)test$(S)testwripaca$(OBJ)
+	$(CC) $(CFLAGS) $^ $(MEXE)$@	
+
+
+
+
+all : $(R) $(R)$(S)bin$(S)testaffine$(EXE) $(R)$(S)bin$(S)testwripaca$(EXE)
 
 

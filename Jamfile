@@ -1,7 +1,0 @@
-
-
-exe: 'test/testaffine' : 'src/affine.c' 'test/testaffine.c'
-
-exe: 'test/wripaca' : 'src/wripaca.c' 'test/testwripaca.c'
-
-

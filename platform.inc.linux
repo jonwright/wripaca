@@ -1,4 +1,5 @@
 
 EXE =
 RM = rm
-
+MKDIR = mkdir
+S = /
