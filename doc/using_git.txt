@@ -13,7 +13,12 @@ Check changes:
     git status
     git diff
 
-Push your changes to the Dropbox:
-    cd place\I\am\working
-    git push c:\Users\wright\Dropbox\wripaca
+Save your changes to the Dropbox:
+    cd c:\Users\wright\Dropbox\wripaca
+    git pull place\I\am\working
+
+Note: It will complain that it is ahead of origin/master by some
+number of commits. That is because origin/master, right now, is
+on github. 
+    
 
