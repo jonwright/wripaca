@@ -1,3 +1,4 @@
+SHELL=cmd.exe
 
 EXE = .exe
 RM = cmd /C del
