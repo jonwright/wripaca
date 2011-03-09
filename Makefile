@@ -1,17 +1,27 @@
 
+TARGET = msvc90_64
 
-include make.inc
+include make.inc.$(TARGET)
 
 	
-all : bin/testaffine$(EXE) bin/testwripaca$(EXE)
+all : $(TARGET)  $(TARGET)/bin \
+       	$(TARGET)/bin/testaffine$(EXE) \
+	$(TARGET)/bin/testwripaca$(EXE)
 
-bin/testaffine$(EXE) : test/testaffine.c src/affine.c
+$(TARGET): 
+	mkdir $(TARGET)
+
+$(TARGET)/bin:
+	cd  $(TARGET) && mkdir bin
+
+$(TARGET)/bin/testaffine$(EXE) : test/testaffine.c src/affine.c
 	$(CC) $(CFLAGS) $^ $(MO)$@	
 
-bin/testwripaca$(EXE) : test/testwripaca.c src/wripaca.c
+$(TARGET)/bin/testwripaca$(EXE) : test/testwripaca.c src/wripaca.c
 	$(CC) $(CFLAGS) $^ $(MO)$@	
 
 clean:
-	cd bin && $(RM) testwripaca$(EXE) $(RM) testaffine$(EXE) && cd ..
+	cd $(TARGET)/bin && $(RM) testwripaca$(EXE) $(RM) testaffine$(EXE) && cd .. 
+
 
 

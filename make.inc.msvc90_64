@@ -1,11 +1,7 @@
 
 
-
-
-NAME = msvc90_64
-
 INCDIR = include
-/ := $(strip \)
+/ = $(strip \)
 CC = cl
 CFLAGS = /Ox /fp:fast /openmp /I $(INCDIR)
 MO = /Fe
