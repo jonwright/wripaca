@@ -1,0 +1,6 @@
+
+EXE = .exe
+RM = del
+/ = $(strip \)
+
+
