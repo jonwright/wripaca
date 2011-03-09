@@ -1,0 +1,14 @@
+
+
+
+
+NAME = msvc90_64
+
+INCDIR = include
+/ := $(strip \)
+CC = cl
+CFLAGS = /Ox /fp:fast /openmp /I $(INCDIR)
+MO = /Fe
+EXE = .exe
+RM = del
+
