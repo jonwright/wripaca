@@ -1,0 +1,19 @@
+
+
+Make a new checkout:
+    cd place\I\am\working
+    git clone c:\Users\wright\Dropbox\wripaca
+
+Save a change in your local checkout:
+
+    git add doc\using_git.txt
+    git commit -m 'New doc about git'
+
+Check changes:
+    git status
+    git diff
+
+Push your changes to the Dropbox:
+    cd place\I\am\working
+    git push c:\Users\wright\Dropbox\wripaca
+
