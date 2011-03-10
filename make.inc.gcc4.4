@@ -1,8 +1,9 @@
 
 CC = gcc
-CFLAGS = -fopenmp -march=native -ffast-math -O3 -I $(INCDIR) -static-libgcc
+CFLAGS = -fopenmp -march=native -ffast-math -O3 -static-libgcc
 MC = -c
+ML = -L 
 MOBJ = -o 
 MEXE = -o 
 OBJ = .o
-
+OPENMP = -fopenmp

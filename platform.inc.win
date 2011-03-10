@@ -1,9 +1,14 @@
 SHELL=cmd.exe
 
 EXE = .exe
-RM = cmd /C del
-MKDIR = cmd /C mkdir
+RM = del /Q
+MKDIR = mkdir
 
 S = $(strip \ )
+
+
+OCLINC="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v3.2\include"
+
+OCLLIBDIR="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v3.2\lib\x64"
 
 

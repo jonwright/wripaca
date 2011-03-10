@@ -1,9 +1,13 @@
 
 CC = gcc
-CFLAGS = -fopenmp -march=native -ffast-math -O3 -I $(INCDIR) -static-libgcc
+CFLAGS = -march=native -ffast-math -O3  -static-libgcc
+ML = -L 
 MC = -c
 MOBJ = -o 
 MEXE = -o 
 OBJ = .o
+OPENMP = -fopenmp
+OCLLIB=-lopencl
+
 
 

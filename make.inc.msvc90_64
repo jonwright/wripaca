@@ -1,8 +1,10 @@
 
 CC = cl
-CFLAGS = /Ox /fp:fast /openmp /I $(INCDIR)
+CFLAGS = /Ox /fp:fast /Wall
 MC = /c
+ML = /link /LIBPATH:
 MOBJ = /Fo
 MEXE = /Fe
 OBJ = .obj
-
+OPENMP = /openmp
+OCLLIB=OpenCL.lib 

@@ -1,0 +1,11 @@
+
+
+Tested systems:
+
+NVIDIA OpenCl on Jon's office PC. 
+    Builds with msvc 9 as delivered by NVIDIA.
+    Can use mingw with an import library (added in builds\OpenCL.def).
+    Make the library with dlltool -l libopencl.a -d OpenCL.def -k -A
+    This will arrive with future mingw compilers it seems
+
+

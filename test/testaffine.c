@@ -1,10 +1,23 @@
-#include "affine.h"
-#include <stdio.h>
+
+/* Unit test code from minunit
+ * http://pantras.free.fr/articles/minunit.html
+ * ===========================================================================
+ */
 
 #define MU_ASSERT(message, test) do { if (!(test)) return message; } while (0)
 #define MU_RUN_TEST(test) do { char *message = test(); tests_run++; \
                                if (message) return message; } while (0)
 int tests_run=0;
+
+#include "affine.h"
+#include <stdio.h>
+
+
+
+
+/* Test functions follow
+ * ===========================================================================
+ */
 
 
 char* test_mat3_transform_vec(void){
@@ -21,7 +34,7 @@ char* test_mat3_transform_vec(void){
  
 }
 
-char* test_determinant3(){
+char* test_determinant3(void){
     double a[9] = { 0.30112582,  0.67285109,  0.37710869,  
                     0.43101797,  0.73377317,  0.60827196,  
                     0.42625684,  0.3349345 ,  0.9300366 };
@@ -33,7 +46,7 @@ char* test_determinant3(){
     return 0;
 }
 
-char* test_inverse_mat3(){
+char* test_inverse_mat3(void){
     double a[9] = { 0.30112582,  0.67285109,  0.37710869,  
                     0.43101797,  0.73377317,  0.60827196,  
                     0.42625684,  0.3349345 ,  0.9300366 };
@@ -54,7 +67,7 @@ char* test_inverse_mat3(){
 }
 
 
-char* test_affine_transform_vec(){
+char* test_affine_transform_vec(void){
     double m[12] = { 0, 0, 1, 
                     0, 1, 0,
                     1, 0, 0,
@@ -68,7 +81,7 @@ char* test_affine_transform_vec(){
     return 0;
 }
 
-char* test_mat3_prod(){
+char* test_mat3_prod(void){
     double a[9] = {  0.97300866,  0.53048923,  0.32333488,  
                     0.6900934 ,  0.44364110,  0.68283224,  
                     0.51383945,  0.87587622,  0.80127724 };
@@ -87,7 +100,7 @@ char* test_mat3_prod(){
 }
 
 
-char* test_inverse_affine_mat(){
+char* test_inverse_affine_mat(void){
     double a[3] = {4,5,6};
     double m[12] = { 0,0,1,  1,0,0, 0,1,0, 0.1, 0.2, 0.3 };
     double r[3];
@@ -102,14 +115,13 @@ char* test_inverse_affine_mat(){
     return 0;
 }
 
-char* test_norm3(){
+char* test_norm3(void){
     double t[3] = {4,5,6};
-    double ret;
     MU_ASSERT( "norm3 OK", fabs(norm3(t)- sqrt(77)) < 1e-6);
     return 0;
 }
 
-char* test_normalise_vector(){
+char* test_normalise_vector(void){
     double v[3] = {2,2,2};
     int i;
     normalise_vector(v);
@@ -118,7 +130,7 @@ char* test_normalise_vector(){
     return 0;
 }
 
-char* test_mat3_axis_angle(){
+char* test_mat3_axis_angle(void){
     double m[9];
     double a[3] = {0, 0, 1};
     double t[9],s30,c30;
@@ -136,16 +148,15 @@ char* test_mat3_axis_angle(){
     return 0;
 }
 
-char* test_rotate_vector_axis_angle(){
+char* test_rotate_vector_axis_angle(void){
     double a[9] = {0, 0, 1};
-
-
+    MU_ASSERT("No axis angle test written",0);
     return 0;
 }
 
 
-char* test_suite(void){
 
+char* test_suite(void){
     MU_RUN_TEST(test_mat3_transform_vec);
     MU_RUN_TEST(test_determinant3);
     MU_RUN_TEST(test_inverse_mat3);
@@ -155,7 +166,7 @@ char* test_suite(void){
     MU_RUN_TEST(test_norm3);
     MU_RUN_TEST(test_normalise_vector);
     MU_RUN_TEST(test_mat3_axis_angle);
-
+    MU_RUN_TEST(test_rotate_vector_axis_angle);
 }
 
 int main(int argc,
@@ -165,3 +176,4 @@ int main(int argc,
     if( result ) printf("FAIL: %s\n", result);
     return 0!= result;
 }
+
