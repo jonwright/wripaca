@@ -8,15 +8,14 @@
 #include <CL/cl.h>
 #include <time.h>
 // OpenCL source code
-const char* OpenCLSource[] = {
-           "__kernel void VectorAdd(__global int* c, __global int* a,__global int* b)",
-           "{",
-           "      // Index of the elements to add \n",
-           "      unsigned int n = get_global_id(0);",
-           "      // Sum the n’th element of vectors a and b and store in c \n",
-           "      c[n] = a[n] + b[n];",
-           "}"
-};
+const char* OpenCLSource = "\n" \
+"__kernel void VectorAdd(__global int* c, __global int* a,__global int* b,"\
+" const unsigned int nmax)"\
+"{\n"\
+"      unsigned int n = get_global_id(0);\n"\
+"      if( n < nmax ){ c[n] = a[n] + b[n]; } \n"\
+"}\n";
+
 
 // Some interesting data for the vectors
 int InitialData1[20] = {37,50,54,50,56,0,43,43,74,71,32,36,16,43,56,100,50,25,15,17
@@ -25,21 +24,25 @@ int InitialData2[20] = {35,51,54,58,55,32,36,69,27,39,35,40,16,44,55,14,58,75,18
 };
 
 // Number of elements in the vectors to be added
-#define SIZE 20048
+#define SIZE 2048*2048*5
+
+void die(char * msg){
+    puts(msg);
+    exit(0);
+}
 
 #define _STR(x) _VAL(x)
 #define _VAL(x) #x
 #define CLDO(f) (f == CL_SUCCESS ) ? (void) 0 \
-                    : puts("OpenCL Error in "__FILE__":"_STR(__LINE__) " " #f  ) 
+                    : die("OpenCL Error in "__FILE__":"_STR(__LINE__) " " #f  ) 
 
 // Main function
 // ************************************************************
 int main(int argc, char **argv)
 {
   // Two integer source vectors in Host memory
-  int HostVector1[SIZE], HostVector2[SIZE];
-  int c, Rows;
-  cl_platform_id cpPlatform;
+  int i, c;
+  cl_platform_id *cpPlatform;
   cl_device_id cdDevice;
   char cBuffer[1024];
   cl_context GPUContext;
@@ -47,34 +50,59 @@ int main(int argc, char **argv)
   cl_mem GPUVector1 , GPUVector2, GPUOutputVector ;
   cl_program OpenCLProgram;
   cl_kernel OpenCLVectorAdd;
-  cl_int err;
+  cl_int err, count;
+  cl_uint num_platforms = 0, num_devices = 0;
   size_t WorkSize[1] = {SIZE};
-  int HostOutputVector[SIZE], testVector[SIZE];
+  int *HostVector1, *HostVector2;
+  int *HostOutputVector, *testVector;
 
   clock_t start, end;
 
   start = clock();
+  count = SIZE;
   // Initialize with some interesting repeating data
-  for( c = 0; c < SIZE; c++)
+  HostVector1 = malloc( SIZE * sizeof(int) );
+  HostVector2 = malloc( SIZE * sizeof(int) );
+  HostOutputVector = malloc( SIZE * sizeof(int) );
+  testVector  = malloc( SIZE * sizeof(int) );
+  
+  c = 0;
+  while( c < SIZE )
   {
          HostVector1[c] = InitialData1[c%20];
          HostVector2[c] = InitialData2[c%20];
          testVector[c] = HostVector1[c]+HostVector2[c];
+         c++;
   }
 
   end = clock();
   printf("Init and CPU %f\n", ( (double) end - (double) start ) / (double) CLOCKS_PER_SEC);
   start = clock();
 
-  //Get an OpenCL platform
-  CLDO( clGetPlatformIDs(1, &cpPlatform, NULL) );
+  // Find out how many opencl plaforms are available
+  CLDO( clGetPlatformIDs( 0, NULL, &num_platforms));
+  printf("Found %d opencl platforms\n", num_platforms);
 
-  // Get a GPU device
-  CLDO(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &cdDevice, NULL));
-  CLDO(clGetDeviceInfo(cdDevice, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL));
-  printf("CL_DEVICE_NAME:       %s\n", cBuffer);
-  CLDO(clGetDeviceInfo(cdDevice, CL_DRIVER_VERSION, sizeof(cBuffer), &cBuffer, NULL));
-  printf("CL_DRIVER_VERSION: %s\n\n", cBuffer);
+  cpPlatform = malloc( num_platforms * sizeof(cl_platform_id) );
+  if ( cpPlatform == NULL ){
+      printf("Malloc failed\n");
+      exit(0);
+  }
+  
+  //Get an OpenCL platform
+  CLDO( clGetPlatformIDs(2, cpPlatform, NULL) );
+
+  // List OpenCL devices
+//  for( i=num_platforms-1 ; i >=0 ; i--) { 
+  for( i=0 ; i < num_platforms ; i++) { 
+     CLDO(clGetDeviceIDs(cpPlatform[i], CL_DEVICE_TYPE_ALL, 1, &cdDevice, &num_devices));
+     printf("Platform %d has %d devices\n",i,num_devices);
+     CLDO(clGetDeviceInfo(cdDevice, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL));
+     printf("CL_DEVICE_NAME:       %s\n", cBuffer);
+     CLDO(clGetDeviceInfo(cdDevice, CL_DRIVER_VERSION, sizeof(cBuffer), &cBuffer, NULL));
+     printf("CL_DRIVER_VERSION: %s\n\n", cBuffer);
+  }
+
 
   // Create a context to run OpenCL on our CUDA-enabled NVIDIA GPU
   GPUContext = clCreateContext(0, 1, &cdDevice, NULL, NULL, &err);
@@ -91,20 +119,34 @@ int main(int argc, char **argv)
 
   // Allocate GPU memory for source vectors AND initialize from CPU memory
   GPUVector1 = clCreateBuffer(GPUContext, CL_MEM_READ_ONLY |
-                                CL_MEM_COPY_HOST_PTR, sizeof(int) * SIZE, HostVector1, &err); CLDO(err);
+                                CL_MEM_COPY_HOST_PTR, sizeof(int) * SIZE, HostVector1, &err); 
+  CLDO(err);
   GPUVector2 = clCreateBuffer(GPUContext, CL_MEM_READ_ONLY |
-                                 CL_MEM_COPY_HOST_PTR, sizeof(int) * SIZE, HostVector2, &err); CLDO(err);
+                                 CL_MEM_COPY_HOST_PTR, sizeof(int) * SIZE, HostVector2, &err); 
+  CLDO(err);
 
   // Allocate output memory on GPU
   GPUOutputVector = clCreateBuffer(GPUContext, CL_MEM_WRITE_ONLY,
-                                       sizeof(int) * SIZE, NULL, &err); CLDO(err);
-
+                                       sizeof(int) * SIZE, NULL, &err); 
+  CLDO(err);
+  end=clock();
+  printf("Allocated buffers on device\n",
+          ( (double) end - (double) start ) / (double) CLOCKS_PER_SEC);
+  start = clock();
   // Create OpenCL program with source code
-  OpenCLProgram = clCreateProgramWithSource(GPUContext, 7,
-                                  OpenCLSource, NULL, &err); CLDO(err);
+  //
+  printf("Going to try to compile\nProgram source is:\n%s", OpenCLSource);
+
+  OpenCLProgram = clCreateProgramWithSource(GPUContext, 1,
+                                  &OpenCLSource, NULL, &err); 
+  CLDO(err);
 
   // Build the program (OpenCL JIT compilation)
-  CLDO( clBuildProgram(OpenCLProgram, 0, NULL, NULL, NULL, NULL) ); 
+  err = clBuildProgram(OpenCLProgram, 0, NULL, NULL, NULL, NULL);
+  if( err ) {
+      printf("Compile failure.\n");
+      exit(0);
+  }
 
   // Create a handle to the compiled OpenCL function (Kernel)
   OpenCLVectorAdd = clCreateKernel(OpenCLProgram, "VectorAdd", &err); CLDO(err);
@@ -118,6 +160,7 @@ int main(int argc, char **argv)
   CLDO(clSetKernelArg(OpenCLVectorAdd, 0, sizeof(cl_mem), (void*)&GPUOutputVector) );
   CLDO(clSetKernelArg(OpenCLVectorAdd, 1, sizeof(cl_mem), (void*)&GPUVector1));
   CLDO(clSetKernelArg(OpenCLVectorAdd, 2, sizeof(cl_mem), (void*)&GPUVector2));
+  CLDO(clSetKernelArg(OpenCLVectorAdd, 3, sizeof(cl_uint), (void*)&count ));
 
   end = clock();
   printf("Copy data %f\n", ( (double) end - (double) start ) / (double) CLOCKS_PER_SEC);
@@ -149,6 +192,7 @@ int main(int argc, char **argv)
   CLDO(clReleaseMemObject(GPUVector1));
   CLDO(clReleaseMemObject(GPUVector2));
   CLDO(clReleaseMemObject(GPUOutputVector));
+  free(cpPlatform);
 
   end = clock();
   printf("Free GPU %f\n", ( (double) end - (double) start ) / (double) CLOCKS_PER_SEC);
