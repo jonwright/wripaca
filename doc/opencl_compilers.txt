@@ -9,3 +9,4 @@ NVIDIA OpenCl on Jon's office PC.
     This will arrive with future mingw compilers it seems
 
 
+oarsub -I -p "gpu='YES'"
