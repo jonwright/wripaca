@@ -9,4 +9,15 @@ NVIDIA OpenCl on Jon's office PC.
     This will arrive with future mingw compilers it seems
 
 
-oarsub -I -p "gpu='YES'"
+ESRF GPU cluster:
+     centos5 has compiler gcc4.1
+     log into rnice machines
+     $     oarsub -I -p "gpu='YES'"
+     Here you can find CL/OpenCL.h in 
+	  OCLINC=/usr/local/cuda-3.2.16/include
+     Also libOpenCL.so in /usr/lib64
+     Works OK with both gcc and icc, but icc was fussy
+     Needs a flag to say -no-gcc to prevent it icking a header
+     Also cant use the -fast option as it wants a static libOpenCL.so
+
+
