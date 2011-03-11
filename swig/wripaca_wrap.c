@@ -2676,8 +2676,13 @@ static swig_module_info swig_module = {swig_types, 1, 0, 0, 0, 0};
 /*-----------------------------------------------
               @(target):= _wripaca.so
   ------------------------------------------------*/
+#if PY_VERSION_HEX >= 0x03000000
+#  define SWIG_init    PyInit__wripaca
+
+#else
 #  define SWIG_init    init_wripaca
 
+#endif
 #define SWIG_name    "_wripaca"
 
 #define SWIGVERSION 0x020002 
@@ -2693,21 +2698,8 @@ static swig_module_info swig_module = {swig_types, 1, 0, 0, 0, 0};
 #ifdef __cplusplus
 extern "C" {
 #endif
-SWIGINTERN PyObject *_wrap_test(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  
-  if (!PyArg_ParseTuple(args,(char *)":test")) SWIG_fail;
-  test();
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
-	 { (char *)"test", _wrap_test, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 

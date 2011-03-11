@@ -67,8 +67,4 @@ except AttributeError:
 
 
 
-def test():
-  return _wripaca.test()
-test = _wripaca.test
-
 

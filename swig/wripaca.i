@@ -5,5 +5,5 @@
 #include "../include/wripaca.h"
 %}
 
-extern void test();
+
 

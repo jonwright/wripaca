@@ -4,4 +4,4 @@
 *.obj
 *.exe
 *.manifest
-
+swig/python/build/*
