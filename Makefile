@@ -13,6 +13,7 @@ R = builds$(S)$(PLATFORM)-$(COMPILER)
 
 $(R):
 	echo $(PLATFORM) $(COMPILER) $(R)
+	$(MKDIR) $(R)
 	$(MKDIR) $(R)$(S)bin
 	$(MKDIR) $(R)$(S)test
 	$(MKDIR) $(R)$(S)src
@@ -27,7 +28,7 @@ $(R)$(S)bin$(S)testaffine$(EXE) : $(R)$(S)src$(S)affine$(OBJ) $(R)$(S)test$(S)te
 	$(CC) $(CFLAGS) $^ $(MEXE)$@	
 
 $(R)$(S)src$(S)wripaca$(OBJ) : src$(S)wripaca.c include$(S)wripaca.h
-	$(CC) $(CFLAGS) -I $(INCDIR) $(MC) $< $(MOBJ)$@
+	$(CC) $(CFLAGS) -I $(INCDIR) $(OPENMP) $(MC) $< $(MOBJ)$@
 
 $(R)$(S)test$(S)testwripaca$(OBJ) : test$(S)testwripaca.c include$(S)wripaca.h
 	$(CC) $(CFLAGS) -I $(INCDIR) $(OPENMP) $(MC) $< $(MOBJ)$@	
@@ -42,7 +43,7 @@ $(R)$(S)src$(S)add$(OBJ) : src$(S)add.c
 
 
 $(R)$(S)bin$(S)add$(EXE) : $(R)$(S)src$(S)add$(OBJ) 
-	$(CC) $(CFLAGS) $^ $(MEXE)$@ $(OCLLIB) $(ML)$(OCLLIBDIR) 
+	$(CC) $(CFLAGS) $^ $(MEXE)$@ $(ML)$(OCLLIBDIR) $(OCLLIB)
 
 
 
@@ -50,8 +51,8 @@ all : $(R) $(R)$(S)bin$(S)testaffine$(EXE) $(R)$(S)bin$(S)testwripaca$(EXE) $(R)
 
 
 clean :
-	cd $(R)$(S)bin && $(RM) *.*
-	cd $(R)$(S)test && $(RM) *.*
-	cd $(R)$(S)src && $(RM) *.*
+	cd $(R)$(S)bin && $(RM) $(EVERYTHING)
+	cd $(R)$(S)test && $(RM) $(EVERYTHING)
+	cd $(R)$(S)src && $(RM) $(EVERYTHING)
 
 

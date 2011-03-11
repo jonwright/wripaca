@@ -1,0 +1,14 @@
+
+# . /opt/intel/cce/current/bin/iccvars.sh 
+# . /opt/intel/cce/10.0.023/bin/iccvars.sh 
+
+CC = icc
+CFLAGS = -no-gcc -O2 -fno-alias -msse3 -ip 
+MC = -c
+ML =  -L 
+MOBJ = -o 
+MEXE = -lm -o 
+OBJ = .o
+OPENMP = -openmp
+OCLLIB = -lOpenCL
+OCLLIBDIR= /usr/lib64

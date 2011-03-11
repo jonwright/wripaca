@@ -1,5 +1,8 @@
 
 EXE =
-RM = rm
+RM = rm -f
+EVERYTHING = *
 MKDIR = mkdir
 S = /
+OCLINC=/usr/local/cuda-3.2.16/include
+
