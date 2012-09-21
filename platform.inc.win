@@ -2,7 +2,9 @@ SHELL=cmd.exe
 
 EXE = .exe
 RM = del /Q
+EVERYTHING = *.*
 MKDIR = mkdir
+
 
 S = $(strip \ )
 

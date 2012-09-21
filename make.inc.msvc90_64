@@ -1,6 +1,6 @@
 
 CC = cl
-CFLAGS = /Ox /fp:fast /Wall
+CFLAGS = /Ox /fp:fast 
 MC = /c
 ML = /link /LIBPATH:
 MOBJ = /Fo

@@ -1,0 +1,13 @@
+
+CC = gcc
+CFLAGS = -g
+ML = -L 
+MC = -c
+MOBJ = -o 
+MEXE = -o 
+OBJ = .o
+OPENMP = -fopenmp
+OCLLIB= -lopencl
+
+
+

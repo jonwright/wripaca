@@ -7,32 +7,43 @@
  * Return value is error status
  */
 
+typedef float rmatrix[9];
+typedef float vector[3];
+typedef struct {
+    rmatrix m;
+    vector  v;
+} afmatrix;
+
+typedef float scalar;
+
+
 /* Written and at least 1 test case */
-void mat3_transform_vec( double [], double [], double []);
+void mat3_transform_vec( rmatrix, vector, vector*);
 
-double determinant3( double[]);
+scalar determinant3( rmatrix );
 
-int inverse_mat3( double [], double []);
+int inverse_mat3( rmatrix, rmatrix*);
 
-void affine_transform_vec( double [], double [], double []);
+void affine_transform_vec( afmatrix, vector, vector*);
 
-void mat3_prod( double [], double[], double[]);
+void mat3_prod( rmatrix , rmatrix, rmatrix*);
 
-int inverse_affine_mat( double [], double []);
+int inverse_affine_mat( afmatrix, afmatrix*);
 
-int normalise_vector(double []);
+int normalise_vector(vector*);
 
-double norm3(double []);
+scalar norm3(vector);
 
-int mat3_from_axis_angle(double [], double , double []);
+int mat3_from_axis_angle(vector*, scalar , rmatrix* );
 
 /* Written and untested */
 double degrees(double);
 double radians(double);
 void round3( double[], double[]);
-double dot3( double[], double[]);
+scalar dot3( vector, vector);
+void cross3( vector, vector, vector *);
 
-int rotate_vector_axis_angle( double [], double , double [], double []);
+int rotate_vector_axis_angle( vector*, scalar , vector, vector *);
 
 /* Yet to be written */
 
