@@ -22,6 +22,20 @@ double radians(double p){ return p*M_PI/180.0; }
  */
 double degrees(double p){ return p*180.0/M_PI; }
 
+
+/**
+ * Round to nearest integers
+ *
+ * @param double vector
+ * @return nearest integers
+ */
+
+void round3(double v[], double h[]){
+    h[0] = floor(v[0]+0.5);
+    h[1] = floor(v[1]+0.5);
+    h[2] = floor(v[2]+0.5);
+}
+
 /**
  * Vector 3 dot product
  *
@@ -180,6 +194,7 @@ int inverse_affine_mat(double m[], double r[]){
  * @param a length 3 vector
  * @return sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])
  */
+#include <stdio.h>
 double norm3(double v[]){
     return sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 }

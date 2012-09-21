@@ -1,5 +1,6 @@
 
-COMPILER = msvc90_64
+#COMPILER = msvc90_64
+COMPILER = gcc4.5
 PLATFORM = win
 
 

@@ -29,6 +29,7 @@ int mat3_from_axis_angle(double [], double , double []);
 /* Written and untested */
 double degrees(double);
 double radians(double);
+void round3( double[], double[]);
 double dot3( double[], double[]);
 
 int rotate_vector_axis_angle( double [], double , double [], double []);
