@@ -23,18 +23,6 @@ double radians(double p){ return p*M_PI/180.0; }
 double degrees(double p){ return p*180.0/M_PI; }
 
 
-/**
- * Round to nearest integers
- *
- * @param double vector
- * @return nearest integers
- */
-
-void round3(double v[], double h[]){
-    h[0] = floor(v[0]+0.5);
-    h[1] = floor(v[1]+0.5);
-    h[2] = floor(v[2]+0.5);
-}
 
 /**
  * Vector 3 dot product
@@ -42,23 +30,12 @@ void round3(double v[], double h[]){
  * @param a
  * @param b
  * @return a.b
- */
+ 
 scalar dot3( vector a, vector b){
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
+*/
 
-/**
- * Vector 3 cross product
- *
- * @param a
- * @param b
- * @return a x b
- */
-void cross3(vector a, vector b, vector *c){
-    (*c)[0] = a[1]*b[2] - a[2]*b[1];
-    (*c)[1] = a[2]*b[0] - a[0]*b[2];
-    (*c)[2] = a[0]*b[1] - a[1]*b[0];
-}
 /**
  * Computes a 3x3 matrix vector product 
  *
@@ -70,6 +47,20 @@ void mat3_transform_vec( rmatrix m, vector v, vector *r){
     (*r)[0] = m[0] * v[0] + m[1]*v[1] + m[2]*v[2];
     (*r)[1] = m[3] * v[0] + m[4]*v[1] + m[5]*v[2];
     (*r)[2] = m[6] * v[0] + m[7]*v[1] + m[8]*v[2];
+}
+
+
+/**
+ * Computes a 3x3 matrix vector product with transpose 
+ *
+ * @param double[9] m is a 3x3 matrix stored flat in row order
+ * @param double[3] v is a vector
+ * @param double[3] r is the result
+ */
+void mat3_T_transform_vec( rmatrix m, vector v, vector *r){
+    (*r)[0] = m[0] * v[0] + m[3]*v[1] + m[6]*v[2];
+    (*r)[1] = m[1] * v[0] + m[4]*v[1] + m[7]*v[2];
+    (*r)[2] = m[2] * v[0] + m[5]*v[1] + m[8]*v[2];
 }
 
 
@@ -193,6 +184,7 @@ scalar norm3(rmatrix v){
     return sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 }
 
+
 /**
  * Normalise a vector to unit length
  *
@@ -201,7 +193,7 @@ scalar norm3(rmatrix v){
  */
 int normalise_vector(vector *v){
     scalar norm;
-    norm = norm3(*v);
+    norm = _norm3(*v);
     if( norm > 0 ){
        (*v)[0] = (*v)[0]/norm;
        (*v)[1] = (*v)[1]/norm;
@@ -267,13 +259,11 @@ int mat3_from_axis_angle(vector *a, scalar p, rmatrix *m){
 int rotate_vector_axis_angle(vector *a, scalar p, vector v, vector *r){
     scalar sinp, cosp, tmp;
     vector t;
-    int err;
-    err = normalise_vector(a);
-    if (err != 0){ return err;}
+    /* err = normalise_vector(a); */
     cosp = cos(p);
     sinp = sin(p);
-    tmp = dot3((*a),v)*(1-cosp);
-    cross3(v,(*a),&t);
+    tmp =  (1-cosp)*_dot3(*a,v);
+    crossProduct(v,(*a),t);
     (*r)[0] = v[0] * cosp + tmp*(*a)[0] + t[0]*sinp ;
     (*r)[1] = v[1] * cosp + tmp*(*a)[1] + t[1]*sinp ;
     (*r)[2] = v[2] * cosp + tmp*(*a)[2] + t[2]*sinp ;
