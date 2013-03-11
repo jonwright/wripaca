@@ -1,6 +1,6 @@
 
-#COMPILER = msvc90_64
-COMPILER = gcc4.5
+COMPILER = msvc90_64
+#COMPILER = gcc4.5
 PLATFORM = win
 
 
@@ -19,6 +19,9 @@ $(R):
 	$(MKDIR) $(R)$(S)test
 	$(MKDIR) $(R)$(S)src
 
+$(R)$(S)src$(S)fableaffine$(OBJ) : src$(S)fableaffine.c include$(S)affine.h
+	$(CC) $(CFLAGS) -I $(INCDIR) $(MC) $< $(MOBJ)$@	
+
 $(R)$(S)src$(S)affine$(OBJ) : src$(S)affine.c include$(S)affine.h
 	$(CC) $(CFLAGS) -I $(INCDIR) $(MC) $< $(MOBJ)$@	
 
@@ -27,6 +30,9 @@ $(R)$(S)test$(S)testaffine$(OBJ) : test$(S)testaffine.c include$(S)affine.h
 
 $(R)$(S)bin$(S)testaffine$(EXE) : $(R)$(S)src$(S)affine$(OBJ) $(R)$(S)test$(S)testaffine$(OBJ)
 	$(CC) $(CFLAGS) $^ $(MEXE)$@	
+
+$(R)$(S)bin$(S)fableaffine$(EXE) : $(R)$(S)src$(S)fableaffine$(OBJ) $(R)$(S)src$(S)affine$(OBJ)
+	$(CC) $(CFLAGS) $^ $(MEXE)$@
 
 $(R)$(S)src$(S)wripaca$(OBJ) : src$(S)wripaca.c include$(S)wripaca.h
 	$(CC) $(CFLAGS) -I $(INCDIR) $(OPENMP) $(MC) $< $(MOBJ)$@
@@ -48,7 +54,7 @@ $(R)$(S)bin$(S)add$(EXE) : $(R)$(S)src$(S)add$(OBJ)
 
 
 
-all : $(R) $(R)$(S)bin$(S)testaffine$(EXE) $(R)$(S)bin$(S)testwripaca$(EXE) $(R)$(S)bin$(S)add$(EXE)
+all : $(R) $(R)$(S)bin$(S)testaffine$(EXE) $(R)$(S)bin$(S)testwripaca$(EXE) $(R)$(S)bin$(S)add$(EXE) $(R)$(S)bin$(S)fableaffine$(EXE)
 
 
 clean :
