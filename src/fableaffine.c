@@ -168,9 +168,9 @@ int main(){
 
     printf("Hello\n");
 
-    /* 17 seconds for 2000 grains and 60000 peaks */
+    /* 7 seconds for 2000 grains and 60000 peaks */
     QueryPerformanceCounter(&start);
-    for(err=0;err<60000*20;err++)
+    for(err=0;err<60000*2000;err++)
       hklcalc(XL, &axis, ang, UBI, T, &dL, &O, &M, &kvector, &gvector, &hkl, wvln );
     QueryPerformanceCounter(&end);
     QueryPerformanceFrequency(&freq);
@@ -193,8 +193,8 @@ int main(){
     ih[2] = (double) ihkl[2];*/
     /* Compute the ideal angles given hkl here */
     QueryPerformanceCounter(&start);
-    /* 0.07 seconds for 2000 grains and 60000 peaks */
-    for(err=0;err<60000*200;err++){
+    /* 10.5 seconds for 2000 grains and 60000 peaks */
+    for(err=0;err<60000*2000;err++){
      ih[0]=(real) (err%10);
      ih[1]=(real) (err%11);
      ih[2]=(real) (err%12);
