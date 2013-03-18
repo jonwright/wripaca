@@ -116,7 +116,7 @@ int main(){
      ih[0]=(real) (err%10);
      ih[1]=(real) (err%11);
      ih[2]=(real) (err%12);
-     omegacalc(ih, UB, UB, UB,
+     omegacalc(ih, UB, UB,
         axis, wvln,  &ang1, &ang2);
     }
     QueryPerformanceCounter(&end);

@@ -105,7 +105,7 @@ double d_determinant3( double [], double []);
  * Therefore 81 derivatives d_out/d_in
  * */
 
-int omegacalc( vector , rmatrix , rmatrix , rmatrix ,
+int omegacalc( vector ,  rmatrix , rmatrix ,
         vector , real , real* , real* );
 
 

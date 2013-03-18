@@ -278,7 +278,7 @@ int rotate_vector_axis_angle(vector *a, scalar p, vector v, vector *r){
  *
  * From ImageD11/gv_general.py
  */
-int omegacalc( vector hkl, rmatrix UBI, rmatrix pre, rmatrix post,
+int omegacalc( vector g, rmatrix pre, rmatrix postinv,
         vector axis, real wvln, real *ang1, real *ang2){
 /**
  *     Get the k and angles given the g in 
@@ -312,20 +312,17 @@ int omegacalc( vector hkl, rmatrix UBI, rmatrix pre, rmatrix post,
     vector a0, a1, a2;
     real rbda0, rbda1, rbda2, modg, kdotbeam, p, k, x_plus_p;
     real q; /* Expect these to be optimised away... */
-    /* Step 1: compute the g-vector */
-    matVec( UBI, hkl, rotg );
-    /* Having this as inline gives a 100X speedup - it must be 
-     * optimising something away */
-    modg = _norm3( rotg );
+    /* Apply pre- rotation to g-vecs */
+    matVec( pre, g, rotg); 
+    /* Length of gvec */
+    modg = _norm3( g );
     kdotbeam = -modg*modg/2.;
-    /* Apply the pre-rotation */
-//    mat3_transform_vec( pre, tmp, &rotg );
     /* Put incident beam in tmp */
-    rbeam[0] = -1.0/wvln;
-    rbeam[1] = 0.0;
-    rbeam[2] = 0.0;
+    tmp[0] = -1.0/wvln;
+    tmp[1] = 0.0;
+    tmp[2] = 0.0;
     /* Rotate incident beam (inverse is transpose for rotation) */
-//    mat3_T_transform_vec( post, tmp, &rbeam);
+    matVec( postinv, tmp, rbeam);
     /* Now find the components of g w.r.t our rotation axis */
     /* a1 = perpendicular to both axis and g */
     crossProduct( axis, rotg , a1 );

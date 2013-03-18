@@ -13,7 +13,7 @@ cdef extern from "../include/affine.h":
 
     scalar determinant3( rmatrix )
 
-    int omegacalc( vector , rmatrix , rmatrix , rmatrix ,
+    int omegacalc( vector , rmatrix , rmatrix ,
         vector , real , real* , real* )
 
 
