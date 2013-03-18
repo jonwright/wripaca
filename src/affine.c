@@ -316,7 +316,7 @@ int omegacalc( vector hkl, rmatrix UBI, rmatrix pre, rmatrix post,
     matVec( UBI, hkl, rotg );
     /* Having this as inline gives a 100X speedup - it must be 
      * optimising something away */
-    modg = norm3( rotg );
+    modg = _norm3( rotg );
     kdotbeam = -modg*modg/2.;
     /* Apply the pre-rotation */
 //    mat3_transform_vec( pre, tmp, &rotg );

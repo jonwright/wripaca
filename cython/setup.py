@@ -8,7 +8,7 @@ from numpy.distutils.misc_util import get_numpy_include_dirs
 nid = get_numpy_include_dirs() + ["../include"]
 print nid
 e = Extension("wripaca", 
-        ["wripaca.pyx",  "../src/affine.c", "../src/wripaca.c"],
+        ["wripaca.pyx",  "../src/affine.c"],# , "../src/wripaca.c"],
         include_dirs = nid ,
         )
 

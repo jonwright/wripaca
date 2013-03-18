@@ -14,8 +14,16 @@ hkl = np.array((1.,1.,1.))
 UBI = np.eye(3).ravel()
 pre = np.eye(3).ravel()
 post = np.eye(3).ravel()
-axis =  np.array( (0.,0.,1.))
+axis =  np.array( (0.,0.,-1.))
 wvln = 0.1
 
-print wripaca.omegacalc( hkl, UBI, pre, post, axis, wvln )
+from ImageD11 import transform
+
+
+tth, eta, omega = transform.uncompute_one_g_vector( hkl, wvln, wedge=0.)#, chi=0.0)
+print tth, eta, omega
+
+om1, om2 = wripaca.omegacalc( hkl, UBI, pre, post, axis, wvln )
+print om1*180/np.pi, om2*180/np.pi
+
 
