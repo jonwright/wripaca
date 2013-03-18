@@ -66,5 +66,53 @@ except AttributeError:
     _newclass = 0
 
 
+__author__="Jon Wright <wright@esrf.fr>"
+__date__="March 2013"
+__version__="?"
+__doc__="..."
+
+
+
+
+def new_doubleArray(*args):
+  return _wripaca.new_doubleArray(*args)
+new_doubleArray = _wripaca.new_doubleArray
+
+def delete_doubleArray(*args):
+  return _wripaca.delete_doubleArray(*args)
+delete_doubleArray = _wripaca.delete_doubleArray
+
+def doubleArray_getitem(*args):
+  return _wripaca.doubleArray_getitem(*args)
+doubleArray_getitem = _wripaca.doubleArray_getitem
+
+def doubleArray_setitem(*args):
+  return _wripaca.doubleArray_setitem(*args)
+doubleArray_setitem = _wripaca.doubleArray_setitem
+class afmatrix(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, afmatrix, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, afmatrix, name)
+    __repr__ = _swig_repr
+    __swig_setmethods__["m"] = _wripaca.afmatrix_m_set
+    __swig_getmethods__["m"] = _wripaca.afmatrix_m_get
+    if _newclass:m = _swig_property(_wripaca.afmatrix_m_get, _wripaca.afmatrix_m_set)
+    __swig_setmethods__["v"] = _wripaca.afmatrix_v_set
+    __swig_getmethods__["v"] = _wripaca.afmatrix_v_get
+    if _newclass:v = _swig_property(_wripaca.afmatrix_v_get, _wripaca.afmatrix_v_set)
+    def __init__(self): 
+        this = _wripaca.new_afmatrix()
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _wripaca.delete_afmatrix
+    __del__ = lambda self : None;
+afmatrix_swigregister = _wripaca.afmatrix_swigregister
+afmatrix_swigregister(afmatrix)
+
+
+def determinant3(*args):
+  return _wripaca.determinant3(*args)
+determinant3 = _wripaca.determinant3
 
 

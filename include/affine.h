@@ -19,7 +19,7 @@ typedef struct {
     vector  v;
 } afmatrix;
 
-typedef float scalar;
+typedef real scalar;
 
 
 /* Written and at least 1 test case */
@@ -105,6 +105,8 @@ double d_determinant3( double [], double []);
  * Therefore 81 derivatives d_out/d_in
  * */
 
+int omegacalc( vector , rmatrix , rmatrix , rmatrix ,
+        vector , real , real* , real* );
 
 
 

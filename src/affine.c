@@ -271,3 +271,87 @@ int rotate_vector_axis_angle(vector *a, scalar p, vector v, vector *r){
 }
 
 
+
+/**
+ * Determine the omega angle for reflection h,k,l given UBI, pre, post and
+ * current rotation axis
+ *
+ * From ImageD11/gv_general.py
+ */
+int omegacalc( vector hkl, rmatrix UBI, rmatrix pre, rmatrix post,
+        vector axis, real wvln, real *ang1, real *ang2){
+/**
+ *     Get the k and angles given the g in 
+ *        g = pre . rot(axis, angle) . post . k
+ *   ...where k will satisfy the Laue equations
+ *   
+ *   The recipe is:
+ *       Find the components of g along and perpendicular to the rotation axis
+ *           co-ords are a0 = axis, 
+ *                       a1 = axis x g, 
+ *                       a2 = a1 x axis = ( axis x g ) x axis
+ *       Rotated vector will be a0 + a1 sin(angle) + a2 cos(angle)
+ *       Laue condition says that [incident beam].[k] = k.sin(theta)
+ *                                                    = 2 sin^2(theta) / lambda 
+ *                                                    = sin(t)/d = |g|.sin(t)
+ *                                                    = |g|*|g|*lambda / 2
+ *       Apply any post rotations to the incident beam 
+ *       Apply any pre-rotations to the g vector
+ *       |g| = [a0 + a1 sin(angle) + a2 cos(angle) ] . [incident beam]
+ *      => solve for angle
+ *
+ *       http://www.ping.be/~ping1339/gonio.htm
+ *       a sin(u) + b cos(u) = c
+ *       let: tan(u') = -b/a
+ *       and: A = a / cos(u')
+ *       Finally you'll find:
+ *            A.sin(u-u') = c
+ *            A.cos(pi/2 - u - u') = c
+ */
+    vector tmp, rotg, rbeam;
+    vector a0, a1, a2;
+    real rbda0, rbda1, rbda2, modg, kdotbeam, p, k, x_plus_p;
+    real q; /* Expect these to be optimised away... */
+    /* Step 1: compute the g-vector */
+    matVec( UBI, hkl, rotg );
+    /* Having this as inline gives a 100X speedup - it must be 
+     * optimising something away */
+    modg = norm3( rotg );
+    kdotbeam = -modg*modg/2.;
+    /* Apply the pre-rotation */
+//    mat3_transform_vec( pre, tmp, &rotg );
+    /* Put incident beam in tmp */
+    rbeam[0] = -1.0/wvln;
+    rbeam[1] = 0.0;
+    rbeam[2] = 0.0;
+    /* Rotate incident beam (inverse is transpose for rotation) */
+//    mat3_T_transform_vec( post, tmp, &rbeam);
+    /* Now find the components of g w.r.t our rotation axis */
+    /* a1 = perpendicular to both axis and g */
+    crossProduct( axis, rotg , a1 );
+    /* a2 = perpendicular to axis and along g */
+    crossProduct( a1, axis, a2 );
+    vec3sub( rotg, a2, a0 ); 
+    /* Dot products of these 3 with the incident beam */
+    rbda0 = _dot3( rbeam, a0 );
+    rbda1 = _dot3( rbeam, a1 );
+    rbda2 = _dot3( rbeam, a2 );
+    /* k.b = rbda0 + rbda1.sin(t) + rbda2.cos(t) */
+    /* a = rbda1;
+       b = rbda2;
+       c = kdotbeam - rbda0; */
+    /* From wikipedia: 
+    # http://en.wikipedia.org/wiki/List_of_trigonometric_identities#Linear_combinations
+    # a.sin(x) + b.cos(x) = sqrt(a*a+b*b) sin(x+p)
+    # with p = atan(b/a) */
+    p = atan2( rbda2, rbda1 );
+    k = sqrt( rbda1*rbda1 + rbda2*rbda2 );
+    q = (kdotbeam - rbda0)/k;
+    if ( q > 1 ) return 1;  /* No solution exists */
+    if ( q < -1 ) return 1;
+    x_plus_p = asin( q );
+    *ang1 = x_plus_p + p;
+    *ang2 = M_PI - x_plus_p + p;
+    return 0;
+}
+

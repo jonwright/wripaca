@@ -24,7 +24,8 @@ class build_ext_subclass( build_ext ):
 
 mod = Extension('_wripaca',
                 sources=['../wripaca_wrap.c', 
-                         '../../src/wripaca.c'],
+                         '../../src/wripaca.c',
+                         '../../src/affine.c'],
                 include_dirs=['../../include']
                 )
 
