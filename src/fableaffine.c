@@ -1,9 +1,6 @@
 #include "affine.h"
 #include <stdio.h>
 
-void printvec3( char* name, real vec[] ){
-    printf("%s %f %f %f\n",name,vec[0],vec[1],vec[2]);
-}
 
 
 
