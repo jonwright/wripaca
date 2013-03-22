@@ -352,3 +352,57 @@ int omegacalc( vector g, rmatrix pre, rmatrix postinv,
     return 0;
 }
 
+
+/**
+ * Given XL, YL, ZL, Omega, UBI, T, find h,k,l
+ *
+ * hkl = UBI.gvector
+ */
+int hklcalc( vector XL, vector *axis, real ang,
+      rmatrix UBI, vector T,
+      vector *dLn, vector *O, real *M,
+      vector *kvector,
+      vector *gvector, 
+      vector *hkl,
+      real wvln ){
+    int err;
+
+    err = rotate_vector_axis_angle( axis, -ang, T, O ); 
+    if ( err != 0 ) return err;
+
+#ifdef DEBUG
+    printvec3("axis",*axis);
+    printvec3("T",T);
+    printvec3("O",*O);
+    printvec3("XL",XL);
+#endif
+    /* Unit vector in lab is: */
+    vec3sub( XL, *O, *dLn );
+#ifdef DEBUG
+    printvec3("dLn",*dLn);
+#endif
+    *M = _norm3(*dLn);
+#ifdef DEBUG
+    printf("M %f   wvln %f\n",*M,wvln);
+#endif
+    vec3sdiv( *dLn, *M, *dLn );
+#ifdef DEBUG
+    printvec3("norm dLn",*dLn);
+#endif
+    *dLn[0] = *dLn[0] - 1.0; /* Beam along x */
+    vec3sdiv( *dLn, wvln, *kvector );    
+#ifdef DEBUG
+    printvec3("kvec",*kvector);
+#endif
+
+    err = rotate_vector_axis_angle( axis, ang, *kvector, gvector );
+    if ( err != 0 ) return err;
+    
+    matVec( UBI, *gvector, *hkl );
+#ifdef DEBUG
+    printvec3("gvec",*gvector);
+#endif
+
+    return 0;
+}
+

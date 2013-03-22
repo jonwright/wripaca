@@ -108,7 +108,13 @@ double d_determinant3( double [], double []);
 int omegacalc( vector ,  rmatrix , rmatrix ,
         vector , real , real* , real* );
 
-
+int hklcalc( vector , vector *, real ,
+      rmatrix , vector ,
+      vector *, vector *, real *,
+      vector *,
+      vector *, 
+      vector *,
+      real );
 
 
 
