@@ -116,7 +116,7 @@ int hklcalc( vector , vector *, real ,
       vector *,
       real );
 
-
+void printvec3( char* , real* );
 
 
 

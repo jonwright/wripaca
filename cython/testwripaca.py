@@ -60,3 +60,47 @@ for wedge, chi in [(0.,0.),(-10.,0.), (11,-15), (0,6)]:
 #        print error
     print 
 
+
+
+def testhklcalc_many(wedge, chi):
+    # hklcalc_many
+    # apply wedge, chi to axis if necessary
+
+    axis = np.array( [0,0,-1], np.float )
+    UBI = np.eye(3).ravel()
+    hkl = np.zeros( (len(omega), 3), np.float)
+    XL = np.ones( (len(omega), 3), np.float)*1e3
+    T = np.array([100,200,300],np.float)
+    wvln = 0.254
+    wc = gv_general.wedgechi( wedge, chi )
+    axis = np.dot( wc, axis )
+    wripaca.hklcalc_many( XL, axis,  omega*np.pi/180, UBI, T, hkl, wvln )
+    print "axis is",axis
+    t, e = transform.compute_tth_eta_from_xyz( XL.T,
+        t_x = T[0],
+        t_y = T[1],
+        t_z = T[2],
+        omega = omega,
+        wedge = wedge,
+        chi = chi
+        )
+    print t,e,omega
+    ori = transform.compute_grain_origins( omega, wedge=wedge, chi=chi, 
+        t_x  = T[0], t_y = T[1], t_z = T[2] )
+    print "last origin",ori.T[-1]
+    print "last xl",XL[-1]
+    kve = transform.compute_k_vectors( t, e, wvln )
+    print "last k",kve.T[-1]
+    gve = transform.compute_g_vectors( t, e, omega, wvln, wedge=wedge, chi=chi )
+    print "last g",gve.T[-1]
+    htest = np.dot( UBI.reshape(3,3), gve )
+    for h,i in zip( hkl, htest.T):
+        assert ((h-i)**2).sum() < 1e-10, "wedge %s , chi %s"%(str(wedge), str(chi))
+    print "OK for wedge",wedge,"chi",chi
+
+
+testhklcalc_many( 0.0, 0.0 )
+testhklcalc_many( 10.0, 0.0 )
+testhklcalc_many( 0.0, 10.0 )
+testhklcalc_many( 10.0, 11.0)
+

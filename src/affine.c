@@ -353,6 +353,10 @@ int omegacalc( vector g, rmatrix pre, rmatrix postinv,
 }
 
 
+void printvec3( char* name, real vec[] ){
+    printf("%s %f %f %f\n",name,vec[0],vec[1],vec[2]);
+}
+
 /**
  * Given XL, YL, ZL, Omega, UBI, T, find h,k,l
  *
@@ -367,9 +371,9 @@ int hklcalc( vector XL, vector *axis, real ang,
       real wvln ){
     int err;
 
-    err = rotate_vector_axis_angle( axis, -ang, T, O ); 
+    err = rotate_vector_axis_angle( axis, ang, T, O ); 
     if ( err != 0 ) return err;
-
+#define DEBUG
 #ifdef DEBUG
     printvec3("axis",*axis);
     printvec3("T",T);
@@ -395,7 +399,7 @@ int hklcalc( vector XL, vector *axis, real ang,
     printvec3("kvec",*kvector);
 #endif
 
-    err = rotate_vector_axis_angle( axis, ang, *kvector, gvector );
+    err = rotate_vector_axis_angle( axis, -ang, *kvector, gvector );
     if ( err != 0 ) return err;
     
     matVec( UBI, *gvector, *hkl );
