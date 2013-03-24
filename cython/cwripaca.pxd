@@ -16,5 +16,12 @@ cdef extern from "../include/affine.h":
     int omegacalc( vector , rmatrix , rmatrix ,
         vector , real , real* , real* )
 
+    int hklcalc( vector , vector *, real ,
+      rmatrix , vector ,
+      vector *, vector *, real *,
+      vector *,
+      vector *, 
+      vector *,
+      real )
 
 
