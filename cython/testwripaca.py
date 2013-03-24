@@ -103,7 +103,8 @@ def testhklcalc_many(wedge, chi):
     wvln = 0.254
     pre = np.eye(3).ravel()
     post = gv_general.chiwedge( wedge=wedge, chi=chi ).ravel()
-    wripaca.hklcalc_many( XL, axis,  omega*np.pi/180, UBI, T, pre, post, hkl, wvln )
+    kc = XL.copy()
+    wripaca.hklcalc_many( XL, axis,  omega*np.pi/180, UBI, T, pre, post, hkl, wvln, kc)
     print "axis is",axis
     t, e = transform.compute_tth_eta_from_xyz( XL.T,
         t_x = T[0],
