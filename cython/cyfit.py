@@ -168,11 +168,13 @@ class refiner(object):
 
         res = scipy.optimize.leastsq( f, p0, full_output=1)
         pfit, pcov, info, errmsg, ier = res
-        residu = f(pfit) 
-        s_sq = (residu**2).sum()/(len(residu)-len(p0))
-        print s_sq, ier, errmsg
+        if ier not in [1,2,3,4]:
+            print s_sq, ier, errmsg
+        else:
+            residu = f(pfit) 
+            s_sq = (residu**2).sum()/(len(residu)-len(p0))
         ubi = pfit[:9].reshape(3,3)
-        print indexing.ubitocellpars(ubi)
+        print ("%.6f "*6)%(indexing.ubitocellpars(ubi))
         print pfit[9:12]
         self.g = grain( ubi, pfit[9:12].copy())
 
@@ -210,13 +212,14 @@ if __name__=="__main__":
 
 
     print time.clock()-start
-
+    start = time.clock()
+    for r in rs:
+        r.do_fit_trans()
+    print "fitting time",time.clock()-start
     if 1:
         from matplotlib.pylab import *
         r = rs[0]
         print r.g.translation
-        r.do_fit_trans()
-        r.do_fit_trans()
         plot((180/np.pi)*r.romega, (180/np.pi)* r.romegaerr, ",")
 #        plot(r.romegaerr, wd, ",")
         show()
