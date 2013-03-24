@@ -1,6 +1,6 @@
 
 #include <math.h> /* fabs */
-#include "math.h"
+#include <stdio.h>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 /* pi */
 #endif
@@ -90,7 +90,7 @@ double radians(double);
     (c)[1] = (a)[1]*(b)[0] + (a)[4]*(b)[1] + (a)[7]*(b)[2]; \
     (c)[2] = (a)[2]*(b)[0] + (a)[5]*(b)[1] + (a)[8]*(b)[2]; 
 
-int rotate_vector_axis_angle( vector*, scalar , vector, vector *);
+int rotate_vector_axis_angle( vector, scalar , vector, vector *);
 
 /* Yet to be written */
 
@@ -110,6 +110,7 @@ int omegacalc( vector ,  rmatrix , rmatrix ,
 
 int hklcalc( vector , vector *, real ,
       rmatrix , vector ,
+      rmatrix, rmatrix,
       vector *, vector *, real *,
       vector *,
       vector *, 

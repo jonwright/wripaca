@@ -256,17 +256,18 @@ int mat3_from_axis_angle(vector *a, scalar p, rmatrix *m){
  * @param v[3] is the input point
  * @param r[3] is the ouput point
  */
-int rotate_vector_axis_angle(vector *a, scalar p, vector v, vector *r){
+int rotate_vector_axis_angle(vector a, scalar p, vector v, vector *r){
     scalar sinp, cosp, tmp;
     vector t;
     /* err = normalise_vector(a); */
     cosp = cos(p);
     sinp = sin(p);
-    tmp =  (1-cosp)*_dot3(*a,v);
-    crossProduct(v,(*a),t);
-    (*r)[0] = v[0] * cosp + tmp*(*a)[0] + t[0]*sinp ;
-    (*r)[1] = v[1] * cosp + tmp*(*a)[1] + t[1]*sinp ;
-    (*r)[2] = v[2] * cosp + tmp*(*a)[2] + t[2]*sinp ;
+    tmp =  (1.0-cosp)*_dot3(a,v);
+    /*  t = v x a */
+    crossProduct(a,v,t);
+    (*r)[0] = v[0] * cosp + tmp*a[0] + t[0]*sinp ;
+    (*r)[1] = v[1] * cosp + tmp*a[1] + t[1]*sinp ;
+    (*r)[2] = v[2] * cosp + tmp*a[2] + t[2]*sinp ;
     return 0;
 }
 
@@ -364,19 +365,36 @@ void printvec3( char* name, real vec[] ){
  */
 int hklcalc( vector XL, vector *axis, real ang,
       rmatrix UBI, vector T,
+      rmatrix pre,
+      rmatrix post,
       vector *dLn, vector *O, real *M,
       vector *kvector,
       vector *gvector, 
       vector *hkl,
       real wvln ){
     int err;
-
-    err = rotate_vector_axis_angle( axis, ang, T, O ); 
+    vector tmp1, tmp2;
+    /* O = post omega pre T */
+    /* Rotate to find origin centres of mass */
+#ifdef DEBUG
+    printf("\n");
+    printvec3("T",T);
+#endif
+    matTVec( pre, T, tmp1);
+#ifdef DEBUG
+    printvec3("tmp1",tmp1);
+#endif
+    err = rotate_vector_axis_angle( *axis, -ang, tmp1, &tmp2 ); 
+#ifdef DEBUG
+    printvec3("tmp2",tmp2);
+#endif
+    matTVec( post, tmp2, *O);
+#ifdef DEBUG
+    printvec3("O",*O);
+#endif    
     if ( err != 0 ) return err;
-#define DEBUG
 #ifdef DEBUG
     printvec3("axis",*axis);
-    printvec3("T",T);
     printvec3("O",*O);
     printvec3("XL",XL);
 #endif
@@ -387,7 +405,7 @@ int hklcalc( vector XL, vector *axis, real ang,
 #endif
     *M = _norm3(*dLn);
 #ifdef DEBUG
-    printf("M %f   wvln %f\n",*M,wvln);
+    printf("M %f   wvln %f   angle(deg)  %f\n",*M,wvln,ang*180.0/M_PI);
 #endif
     vec3sdiv( *dLn, *M, *dLn );
 #ifdef DEBUG
@@ -398,9 +416,11 @@ int hklcalc( vector XL, vector *axis, real ang,
 #ifdef DEBUG
     printvec3("kvec",*kvector);
 #endif
-
-    err = rotate_vector_axis_angle( axis, -ang, *kvector, gvector );
-    if ( err != 0 ) return err;
+    /* g = pre omega post k */
+    /* Rotate to find origin centres of mass */
+    matVec( post, *kvector, tmp1);
+    err = rotate_vector_axis_angle( *axis, ang, tmp1, &tmp2 ); 
+    matVec( pre, tmp2, *gvector);
     
     matVec( UBI, *gvector, *hkl );
 #ifdef DEBUG

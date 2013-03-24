@@ -13,11 +13,14 @@ cdef extern from "../include/affine.h":
 
     scalar determinant3( rmatrix )
 
+    int rotate_vector_axis_angle(vector, scalar, vector, vector*)
+
     int omegacalc( vector , rmatrix , rmatrix ,
         vector , real , real* , real* )
 
     int hklcalc( vector , vector *, real ,
       rmatrix , vector ,
+      rmatrix, rmatrix,
       vector *, vector *, real *,
       vector *,
       vector *, 

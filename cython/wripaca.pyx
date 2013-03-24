@@ -10,6 +10,21 @@ def determinant3( np.ndarray[np.double_t, ndim=1] arg ):
     return cwripaca.determinant3( <cwripaca.rmatrix> arg.data )
 
 
+def rotate_vector_axis_angle(
+        np.ndarray[np.double_t, ndim=1] axis,
+        double angle,
+        np.ndarray[np.double_t, ndim=1] inp,
+        np.ndarray[np.double_t, ndim=1] outp,
+        ):
+   cwripaca.rotate_vector_axis_angle( 
+           <cwripaca.vector> np.PyArray_DATA(axis),
+           angle,
+           <cwripaca.vector> np.PyArray_DATA(inp),
+           <cwripaca.vector*> np.PyArray_DATA(outp),
+        )   
+
+
+
 
 def omegacalc( np.ndarray[np.double_t, ndim=1, mode='c'] gve , 
         np.ndarray[np.double_t, ndim=1, mode='c'] pre , 
@@ -35,6 +50,8 @@ def hklcalc_many(
         np.ndarray[np.double_t, ndim=1, mode='c'] angle, # omegas
         np.ndarray[np.double_t, ndim=1, mode='c'] UBI, # for h = UBI.g
         np.ndarray[np.double_t, ndim=1, mode='c'] T, # grain translation
+        np.ndarray[np.double_t, ndim=1, mode='c'] pre, # 9x1 wedgechi
+        np.ndarray[np.double_t, ndim=1, mode='c'] post, # 9x1 wedgechi
         np.ndarray[np.double_t, ndim=2, mode='c'] hkl, # output
         double wvln
         ):
@@ -51,9 +68,11 @@ def hklcalc_many(
                 <cwripaca.real> angle[i],
                 <cwripaca.rmatrix> np.PyArray_DATA( UBI ),
                 <cwripaca.vector> np.PyArray_DATA( T ),
+                <cwripaca.rmatrix> np.PyArray_DATA( pre ),
+                <cwripaca.rmatrix> np.PyArray_DATA( post ),
                 &dLn, &O, &M, &k, &g, &h, wvln)
         hkl[i,0] = h[0]
-        hkl[i,1] = h[0]
-        hkl[i,2] = h[0]
+        hkl[i,1] = h[1]
+        hkl[i,2] = h[2]
 
 
