@@ -19,20 +19,20 @@ detpsteps = {
             'z_size'   : lambda size: 1.001*size 
             }
 
-def computeXLYLZL( sc, fc, pars):
-    pks = [ sc, fc ]
+def computeXLYLZL( colfile, pars):
+    pks = [ colfile.sc, colfile.fc ]
     dargs = {}
     for p in detpnames:
         dargs[p] = pars.get(p)
     xlylzl = ImageD11.transform.compute_xyz_lab( pks, **dargs )
     return xlylzl
 
-def derivativeXLYLZL( sc, fc, pars, refinables ):
-    pks = [ sc, fc ]
+def derivativeXLYLZL( colfile, pars, refinables ):
+    pks = [ colfile.sc, colfile.fc ]
     dargs = {}
     for p in detpnames:
         dargs[p] = pars.get(p)
-    calc = computeXLYLZL( sc, fc, pars )
+    calc = computeXLYLZL( colfile, pars )
     # parameter step sizes
     derivs = {}
     for p in refinables:
@@ -53,7 +53,8 @@ oripsteps = {'wedge' : lambda wedge : 0.1,
               't_z' : lambda t : 0.1, 
              }
 
-def grainorigins( omega, agrain, pars ):
+def grainorigins( colfile, agrain, pars ):
+    omega = colfile.omega
     dargs = { 'wedge' : pars.get('wedge'),
                 'chi' : pars.get('chi') }
     dargs['t_x'], dargs['t_y'], dargs['t_z'] = \
@@ -62,8 +63,9 @@ def grainorigins( omega, agrain, pars ):
                 omega, **dargs )
     return origins
 
-def derivativeorigins(omega, agrain, pars, refinables):
-    origins0 = grainorigins( omega, agrain, pars )
+def derivativeorigins(colfile, agrain, pars, refinables):
+    origins0 = grainorigins( colfile, agrain, pars )
+    omega = colfile.omega
     t_x, t_y, t_z =  agrain.translation
     wedge = pars.get('wedge')
     chi = pars.get('chi')
@@ -82,17 +84,17 @@ def derivativeorigins(omega, agrain, pars, refinables):
         dargs[p] = psave
     return origins0, derivs
 
-def labvec( sc, fc, omega, agrain, pars):
-    v_xlylzl = computeXLYLZL( sc, fc, pars )
-    v_xgygzg = grainorigins( omega, agrain, pars )
+def labvec( colfile, agrain, pars):
+    v_xlylzl = computeXLYLZL( colfile, pars )
+    v_xgygzg = grainorigins( colfile, agrain, pars )
     v_labvec = v_xlylzl - v_xgygzg
     return v_labvec
 
-def derivativelabvec( sc, fc, omega, agrain, pars, refinables):
+def derivativelabvec( colfile, agrain, pars, refinables):
     dxlp = filter( lambda p: p in detpsteps, refinables )
-    xlylzl, Dxlylzl = derivativeXLYLZL( sc, fc, pars, dxlp )
+    xlylzl, Dxlylzl = derivativeXLYLZL( colfile, pars, dxlp )
     dxgp = filter( lambda p: p in oripsteps, refinables )
-    xgygzg, Dxgygzg = derivativeorigins( omega, agrain, pars, dxgp)
+    xgygzg, Dxgygzg = derivativeorigins( colfile, agrain, pars, dxgp)
     labvec = xlylzl - xgygzg
     Dlabvec = {}
     for p in dxlp:
@@ -104,8 +106,9 @@ def derivativelabvec( sc, fc, omega, agrain, pars, refinables):
             Dlabvec[p] = -Dxgygzg[p]
     return labvec, Dlabvec
 
-def DgDk( omega, pars):
-    # this would apply a rotation matrix which depends on omega, wedge, chi
+def DgDk( colfile, pars):
+    omega = colfile.omega
+    # this would applies a rotation matrix which depends on omega, wedge, chi
     wedge = pars.get('wedge')
     chi = pars.get('chi')
     dummy = np.zeros( (3, len(omega) ) )
@@ -122,29 +125,14 @@ def DgDk( omega, pars):
             omega, wedge=wedge, chi=chi )
     return dgdk0,dgdk1,dgdk2
 
-def DoDt( omega, pars):
-    # this would apply a rotation matrix which depends on omega, wedge, chi
-    wedge = pars.get('wedge')
-    chi = pars.get('chi')
-    dodt0 = ImageD11.transform.compute_grain_origins(
-            omega, wedge=wedge, chi=chi, 
-            t_x=1.0, t_y=0.0, t_z=0.0)
-    dodt1 = ImageD11.transform.compute_grain_origins(
-            omega, wedge=wedge, chi=chi, 
-            t_x=0.0, t_y=1.0, t_z=0.0)
-    dodt2 = ImageD11.transform.compute_grain_origins(
-            omega, wedge=wedge, chi=chi, 
-            t_x=1.0, t_y=0.0, t_z=1.0)
-    return dodt0, dodt1, dodt2
 
-
-
-def g_from_k( kvecs, omega, pars ):
-    d0,d1,d2 = DgDk( omega, pars ) 
+def g_from_k( kvecs, colfile, pars ):
+    d0,d1,d2 = DgDk( colfile, pars ) 
     g = kvecs[0,:]*d0 + kvecs[1,:]*d1 + kvecs[2,:]*d2
     return g
 
-def derivative_g_from_k( kvecs, Dkvecs, omega, pars, refinables ):
+def derivative_g_from_k( kvecs, Dkvecs, colfile, pars, refinables ):
+    omega = colfile.omega
     # this would applies a rotation matrix which depends on omega, wedge, chi
     wedge = pars.get('wedge')
     chi = pars.get('chi')
@@ -231,7 +219,7 @@ def rotv3n( mat, Dmat, v3n, Dv3n ):
 def modv3n( vec3n ):
     v2 = vec3n*vec3n
     assert v2.shape[0] == 3
-    modv = np.sqrt(v2.sum(axis=0))
+    modv = np.sqrt(v2.sum(axis=0)) 
     return modv
 
 
@@ -268,10 +256,10 @@ def Derivative_quotient_v3n_v1n( labvec, Dlabvec, vmodv3n, Dmodv3n):
     return quotient, Dquotient
 
 
-def Derivativegobs( sc, fc, omega, gr, pars, refinables):
+def Derivativegobs( cf, gr, pars, refinables):
     # Diffracted ray vector, depends on pars
     # labvec is an orthogonal basis (real laboratory coordinates)
-    labvec, Dlabvec = derivativelabvec( sc, fc, omega, gr, pars,
+    labvec, Dlabvec = derivativelabvec( cf, gr, pars,
                            refinables )
     # Length of this vector
     valmodv3n, Dmodv3n = Derivativemodv3n( labvec, Dlabvec )
@@ -293,19 +281,19 @@ def Derivativegobs( sc, fc, omega, gr, pars, refinables):
     #drlv = (hklr - hkli)
     #drlv2 = np.sqrt((drlv*drlv).sum(axis=0))
     # Rotate k to g, still an orthogonal reciprocal angstrom based metric
-    gobs, Dg = derivative_g_from_k( k , Dk, omega, pars,  refinables )
+    gobs, Dg = derivative_g_from_k( k , Dk, cf, pars,  refinables )
     return gobs, Dg
 
-def gobs( sc, fc, omega, gr, pars):
+def gobs( cf, gr, pars):
     # labvec is an orthogonal basis (real laboratory coordinates)
-    v_labvec = labvec( sc, fc, omega, gr, pars )
+    v_labvec = labvec( cf, gr, pars )
     valmodv3n = modv3n( v_labvec )
     # direction is along here: (eg, direction cosines, normalised vector)
     direction = quotient_v3n_v1n( v_labvec , valmodv3n )
     wavelength = pars.get('wavelength')
     k = direction / wavelength
     k[0,:] = k[0,:] - 1.0/wavelength # incident beam along x
-    gobs = g_from_k( k , omega, pars )
+    gobs = g_from_k( k , cf, pars )
     return gobs
 
 def derivativegcalc(gr, gobs):
@@ -328,29 +316,55 @@ def derivativegcalc(gr, gobs):
     return gcalc, dGcalc
     
 
-def dGdobs( sc, fc, omega, gr, pars, step=0.01) :
-    tsc = sc.copy()
-    tfc = fc.copy()
-    tomega = omega.copy()
 
-    g0 = gobs( tsc, tfc, tomega, gr, pars )
-    np.add(tsc, step, tsc )
-    g1 =  gobs( tsc, tfc, tomega, gr, pars )
+class tmpcol:
+    def __init__(self, cf):
+        self.sc = cf.sc.copy()
+        self.fc = cf.fc.copy()
+        self.omega = cf.omega.copy()
+
+def dGdobs( cf, gr, pars, step=0.01) :
+    tmp = tmpcol( cf )
+
+    g0 = gobs( tmp, gr, pars )
+    np.add(tmp.sc, step, tmp.sc )
+    g1 =  gobs( tmp, gr, pars )
     dgdsc = ( g1 - g0 ) / step      # 3,N
-    np.subtract(tsc,step,tsc)
+    np.subtract(tmp.sc,step,tmp.sc)
 
-    np.add(tfc, step, tfc )
-    g1 =  gobs( tsc, tfc, tomega, gr, pars )
+    np.add(tmp.fc, step, tmp.fc )
+    g1 =  gobs( tmp, gr, pars )
     dgdfc = ( g1 - g0 ) / step
-    np.subtract(tfc,step,tfc) # 3,N
+    np.subtract(tmp.fc,step,tmp.fc) # 3,N
 
-    np.add(tomega, step, tomega )
-    g1 =  gobs( tsc, tfc, tomega, gr, pars )
+    np.add(tmp.omega, step, tmp.omega )
+    g1 =  gobs( tmp, gr, pars )
     dgdomega = ( g1 - g0 ) / step   # 3,N
     
     return dgdsc, dgdfc, dgdomega
 
 
+def rotate_errors( cf , gr, pars):
+
+    # single data point, uncorrelated has a matrix of:
+    #  1/ss   0     0
+    #   0    1/ff   0
+    #   0     0    1/oo
+    #
+    # correlated that would be:
+    #  1/ss  1/sf  1/so
+    #  1/fs  1/ff  1/fo
+    #  1/os  1/of  1/oo
+    weights = np.zeros( (3,3,cf.nrows ), np.float)
+    weights[0,0] = 1./cf.sigs/cf.sigs
+    weights[1,1] = 1./cf.sigf/cf.sigf
+    weights[2,2] = 1./cf.sigo/cf.sigo
+    weights[1,0] = weights[0,1]= cf.covsf/cf.sigs/cf.sigf
+    weights[2,0] = weights[0,2]= cf.covso/cf.sigs/cf.sigo
+    weights[2,1] = weights[1,2]= cf.covfo/cf.sigo/cf.sigf
+    #
+    #
+    return weights
 
 
 
