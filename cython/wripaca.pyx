@@ -152,6 +152,10 @@ def hklcalc_many(
 @cython.wraparound(False)
 def ih_drlv( np.ndarray[np.double_t, ndim=2, mode='c'] hkl ,
      np.ndarray[np.double_t, ndim=1, mode='c'] drlv ):
+    """
+    sets hkl to the nearest integer values 
+    sets drlv to |hkl - hinteger|
+    """
     cdef int i
     cdef double ih0, ih1, ih2
     assert drlv.shape[0] == hkl.shape[0]

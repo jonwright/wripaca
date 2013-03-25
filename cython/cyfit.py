@@ -24,8 +24,8 @@ class cyfit(object):
         self.reset()
 
     def reset(self):
-        self.post = gv_general.chiwedge( wedge = p.get('wedge'),
-                chi = p.get('chi')).ravel()
+        self.post = gv_general.chiwedge( wedge = self.pars.get('wedge'),
+                chi = self.pars.get('chi')).ravel()
         self.posti= np.dot(gv_general.wedgemat(self.pars.get('wedge')), 
                            gv_general.chimat(self.pars.get('chi'))).T.ravel()
 
@@ -35,7 +35,7 @@ class cyfit(object):
         self.sc = sc
         self.fc = fc
         self.XL = transform.compute_xyz_lab( [sc, fc], 
-                **p.parameters ).T.copy()
+                **self.pars.parameters ).T.copy()
 
     def hkl(self, sc, fc , r_omega, g, hkl, kcalc):
         wripaca.hklcalc_many( self.XL,
@@ -46,7 +46,7 @@ class cyfit(object):
                 self.pre,
                 self.post,
                 hkl,
-                p.get('wavelength'),
+                self.pars.get('wavelength'),
                 kcalc)
         return hkl
 

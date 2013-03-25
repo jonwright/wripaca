@@ -3,7 +3,7 @@
 import geometry
 import numpy as np
 from ImageD11 import transform, indexing
-from ImageD11.columnfile import columnfile
+from ImageD11.columnfile import columnfile, colfile_from_hdf
 from ImageD11.grain import read_grain_file, write_grain_file
 from ImageD11.parameters import parameters, read_par_file
 from ImageD11.transformer import transformer
@@ -136,8 +136,9 @@ def fitgrain( cf, gr, pars, refinables, ncycle=20, shoelim=1e-4, quiet = False):
         vars = Ddiff.keys()
 
         imat, shifts, chi2 = lsq( diff, Ddiff, None, vars )
-        print "chi2",chi2,
-        shoemax  =applyshifts( shifts, imat, chi2, pars, gr, vars )
+        if not quiet:
+            print "chi2",chi2,
+        shoemax  =applyshifts( shifts, imat, chi2, pars, gr, vars, quiet=quiet )
 
         if not quiet:
             print "Max shift/e % 6.2g"%(shoemax)
@@ -146,7 +147,7 @@ def fitgrain( cf, gr, pars, refinables, ncycle=20, shoelim=1e-4, quiet = False):
             gr.ubi = makehexagonal( gr.ubi )
         # make W from lsq
 
-        cellparerrors(gr, vars, imat, chi2, quiet=False)
+        cellparerrors(gr, vars, imat, chi2, quiet=quiet)
         cycle += 1
     return gr, pars
 
@@ -182,36 +183,77 @@ import matplotlib.pylab as pylab
 # foreach grain compute drlv with ideal omega
 # choose lowest
 
-def computelabels( grains, pars, colfile):
-    for g in grains:
-        pass
+
+def loadcolfile(cfile):
+    """ fixme: move to ImageD11.colfile if not there already """
+    if cfile.find("::")>-1:
+        h,s = cfile.split("::")
+        try:
+            colfile = colfile_from_hdf( h, name = s )
+        except:
+            print "*",cfile,"*"
+            print "Trying to open",h, os.path.exists(h)
+            print s
+            raise
+    else:
+        colfile = columnfile(cfile)
+    return colfile
+
+
+import cyfit, wripaca
+
+class dummycf:
+    def __init__(self, sc, fc, omega):
+        self.sc = sc
+        self.fc = fc
+        self.omega = omega
+        self.nrows= len(self.omega)
+
+def assignpeaks( gr, pars, colfile, tol=None ):
+    labels = np.zeros( colfile.nrows )
+    cyf = cyfit.cyfit(pars)
+    cyf.setscfc( colfile.sc, colfile.fc )
+    hkl = np.zeros( cyf.XL.shape, np.float)
+    drlv = np.zeros( colfile.nrows, np.float)
+    kcalc = np.zeros( cyf.XL.shape, np.float)
+    r_omega  = np.array(colfile.omega*np.pi/180.0,np.float)
+    cyf.hkl( colfile.sc, colfile.fc, r_omega, gr, hkl, kcalc )
+    wripaca.ih_drlv( hkl, drlv )
+    m = drlv < tol
+    sc = colfile.sc[m]
+    fc = colfile.fc[m]
+    omega = colfile.omega[m]
+    print "Got",m.sum(),"peaks"
+    return dummycf( sc, fc, omega )
 
 def fitallgrains( gfile, pfile, cfile):
-    colfile = columnfile(cfile)
+    colfile = loadcolfile( cfile )
     grains = read_grain_file( gfile )
     pars = read_par_file( pfile )
+
     variables = [ 't_x','t_y', 't_z', 'y_center',  'tilt_y', 'tilt_z',
                        'tilt_x',  'distance', 'wedge']
     pfitted = []
     for i in range(len(grains)):
         print "***",i
         gr = grains[i]
-        cf = colfile.copy()
-        cf.filter( cf.labels == i )
+        if not hasattr(colfile, "labels"):
+            cf = assignpeaks( gr, pars, colfile, tol = 0.05 )
+        else:
+            cf = colfile.copy()
+            cf.filter( cf.labels == i )
         print cf.nrows
         pi = parameters( **pars.parameters )
         pi.set('t_x', gr.translation[0])
         pi.set('t_y', gr.translation[1])
         pi.set('t_z', gr.translation[2])
-        gr, pfit = fitgrain( cf, gr, pi, variables )
+        gr, pfit = fitgrain( cf, gr, pi, variables, quiet=True )
         grains[i] = gr
         pfitted.append( pfit )
 
-        diff, Ddiff = fitgrainfunc( cf, gr, pfit, variables )
-        v = Ddiff.keys()
-        pd =   project_diff_on_variable( diff, 'y_center', Ddiff)
-        print pd.shape, colfile.omega.shape
         if 0:
+            diff, Ddiff = fitgrainfunc( cf, gr, pfit, variables )
+            v = Ddiff.keys()
             for v in ['y_center', 'distance']:
                 pylab.figure(1)
                 pylab.title("Versus omega")
