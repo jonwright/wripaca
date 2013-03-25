@@ -371,7 +371,7 @@ def rotate_errors( cf , gr, pars):
 import wripaca
 from ImageD11 import gv_general
 
-def omegacalc_ub(self, ubi, h, pars, romega):
+def omegacalc_ub( ubi, h, pars, romega):
     pre = np.eye(3).ravel()
     posti = np.dot(gv_general.wedgemat(pars.get('wedge')), 
                      gv_general.chimat(pars.get('chi'))).T.ravel()
