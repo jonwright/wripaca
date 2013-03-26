@@ -1,5 +1,5 @@
 import matplotlib.pylab as pylab
-import geometry
+import geometry, os
 import numpy as np
 from ImageD11 import transform, indexing, gv_general
 from ImageD11.columnfile import columnfile, colfile_from_hdf
@@ -359,7 +359,8 @@ def fitallgrains( gfile, pfile, cfile, ngrains = None, tolerance=0.02,
 
     variables = [ 't_x','t_y', 't_z', 'y_center',  'tilt_y', 'tilt_z',
                        'tilt_x',  'distance', 'wedge']
- #   variables = [ 't_x','t_y', 't_z']
+    print "Fix the global geometry"
+    variables = [ 't_x','t_y', 't_z']
     #, 'y_center',  'tilt_y', 'tilt_z',
     #                   'tilt_x',  'distance', 'wedge']
     pfitted = []
