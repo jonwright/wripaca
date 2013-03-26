@@ -368,32 +368,5 @@ def rotate_errors( cf , gr, pars):
 
 
 
-import wripaca
-from ImageD11 import gv_general
-
-def omegacalc_ub( ubi, h, pars, romega):
-    pre = np.eye(3).ravel()
-    posti = np.dot(gv_general.wedgemat(pars.get('wedge')), 
-                     gv_general.chimat(pars.get('chi'))).T.ravel()
-    axis = np.array([0,0,-1],np.float)
-    ub = np.linalg.inv(ubi)
-    gcalc = np.dot( ub, h.T ).T.copy()
-    romegacalc = np.zeros( romega.shape, np.float)
-    romegaerr  = np.zeros( romega.shape, np.float)
-    wripaca.omegacalcclose(gcalc,
-                           pre,
-                           posti,
-                           axis,
-                           romega,
-                           romegacalc,
-                           romegaerr,
-                           pars.get('wavelength'),
-                           )
-    return romegacalc
-
-
-
-
-
 
 

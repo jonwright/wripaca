@@ -1,10 +1,9 @@
-
 import matplotlib.pylab as pylab
 import geometry
 import numpy as np
 from ImageD11 import transform, indexing, gv_general
 from ImageD11.columnfile import columnfile, colfile_from_hdf
-from ImageD11.grain import read_grain_file, write_grain_file
+from ImageD11.grain import read_grain_file, write_grain_file, grain
 from ImageD11.parameters import parameters, read_par_file
 from ImageD11.transformer import transformer
 from ImageD11.unitcell import unitcell
@@ -22,35 +21,6 @@ def makehexagonal( ubi ):
 def cpfromub( ubf ):
     ub = np.reshape( ubf, (3,3) )
     return np.array(indexing.ubitocellpars( np.linalg.inv( ub ) ))
-
-def applyshifts( shifts, imat, chi2, pars, gr, vars, quiet=True):
-    # Apply the shifts
-    shoemax = 0.0 # max shift over error
-    for i in range(len(vars)):
-        p = vars[i]
-        e = np.sqrt( imat[i,i]*chi2 )
-        if pars.parameters.has_key(p):
-            if not quiet:
-                print "%-20s %20.9f"%(p, pars.get(p)+shifts[i])
-                print "%-20s %20.9f"%(p+"_error", e )
-                print "%-20s %20.9f"%(p+"_sh/e", shifts[i]/e )
-            pars.parameters[p] += shifts[i]
-        elif p.find("ub")==0:
-            ip = int(p[-2])
-            jp = int(p[-1])
-            gr.ub[ip,jp] += shifts[i]
-            if not quiet:
-                print "%-20s %20.9f"%(p, gr.ub[ip,jp])
-                print "%-20s %20.9f"%(p+"_error", e )
-                print "%-20s %20.9f"%(p+"_sh/e", shifts[i]/e )        
-        else:
-            print "What",p
-        shoe = abs(shifts[i] / e)
-        if shoe > shoemax:
-            shoemax = shoe
-    gr.translation = pars.get('t_x'),pars.get('t_y'),pars.get('t_z')
-    gr.ubi = np.linalg.inv( gr.ub )
-    return shoemax
 
 def cellparerrors(gr, vars, imat, chi2, quiet=True):
     cp = cpfromub( gr.ub.ravel() )
@@ -87,24 +57,6 @@ def cellparerrors(gr, vars, imat, chi2, quiet=True):
         print "beta %e %e"%(np.cos(np.radians(cp[4])),np.radians(cp[4]-90))
         print "gamma %e %e"%(np.cos(np.radians(cp[5]))+0.5,np.radians(cp[5]-120))
 
-
-def lsq( diff, Ddiff, Weights, allref):
-    nv  = len(allref)
-    rhs = np.zeros( nv )
-    lsq = np.zeros( (nv, nv ) )
-    for i in range(nv):
-        gi = Ddiff[allref[i]]
-        rhs[i] = (gi*diff).ravel().sum() 
-        for j in range(i,nv):
-            gj = Ddiff[allref[j]]
-            t = (gi*gj).ravel().sum()
-            lsq[i,j] = t
-            lsq[j,i] = t
-    imat = np.linalg.inv(lsq)
-    shifts = np.dot( imat, rhs )
-    chi2 = (diff*diff).ravel().sum()
-    return imat, shifts, chi2
-
 class many_grain_lsq:
     def __init__(self, ngrains, pars):
         self.pars = [p for p in pars] # globals
@@ -116,9 +68,12 @@ class many_grain_lsq:
         self.rhs = np.zeros(self.nv)
         self.lsq = np.zeros((self.nv,self.nv))
         self.gvars = ['t_x','t_y','t_z']
+        self.s_sq = 0
+        self.nobs = 0
         for i in range(3):
             for j in range(3):
                 self.gvars.append("ub%d%d"%(i,j))
+        #print self.gvars
         print "The size of the least squares problem is", self.nv
         # FIXME this should be block banded
 
@@ -147,7 +102,6 @@ class many_grain_lsq:
                 self.lsq[ip,jp] = t
                 self.lsq[jp,ip] = t
         # grain - par : overwrite
-        goffset = self.np + 12*index
         for i in range(len(self.gvars)):
             gi = Ddiff[self.gvars[i]]
             ip = i + goffset 
@@ -158,22 +112,31 @@ class many_grain_lsq:
                 t = (gi*gj).ravel().sum()
                 self.lsq[ip,j] = t
                 self.lsq[j,ip] = t
+        self.s_sq += (diff*diff).ravel().sum()
+        self.nobs += len(diff.ravel())
 
 
     def solve(self):
-        print "Inverting the matrix..."
+        self.chi2 = self.s_sq / ( self.nobs - self.nv )
+        print "Inverting the matrix...", self.chi2
+        if 0:
+            pylab.clf()
+            pylab.imshow( np.log(abs(self.lsq)+1e-10), interpolation='nearest' )
+            pylab.show()
         self.imat = np.linalg.inv(self.lsq)
         self.shifts = np.dot( self.imat, self.rhs )
         return self.imat, self.shifts
 
     def applyshifts( self, pars, grs ):
+        errs = np.sqrt(np.diagonal(self.imat)*self.chi2)
         for i,v in enumerate(self.pars):
             print i,v,self.shifts[i],
             pars.parameters[v] += self.shifts[i]
-            print "--->",pars.parameters[v]
+            print "--->",pars.parameters[v],"+/-",errs[i]
         for ig in range(len(grs)):
             offset = self.np + 12*ig
             for i,p in enumerate(self.gvars):
+#                print ig,i,p,self.shifts[i+offset]
                 if p[0:2] == "ub":
                     ip = int(p[-2])
                     jp = int(p[-1])
@@ -184,17 +147,63 @@ class many_grain_lsq:
                     grs[ig].translation[1] += self.shifts[i+offset]
                 if p == 't_z':
                     grs[ig].translation[2] += self.shifts[i+offset]
+            grs[ig].ubi = np.linalg.inv( grs[ig].ub )
+        # max shift over error
+        return abs(self.shifts/errs).max()
+
+import wripaca
+from ImageD11 import gv_general
+
+def omegacalc_ub( ubi, h, pars, romega):
+    pre = np.eye(3).ravel()
+    posti = np.dot(gv_general.wedgemat(pars.get('wedge')), 
+                     gv_general.chimat(pars.get('chi'))).T.ravel()
+    axis = np.array([0,0,-1],np.float)
+    ub = np.linalg.inv(ubi)
+    gcalc = np.dot( ub, h.T ).T.copy()
+    romegacalc = np.zeros( romega.shape, np.float)
+    romegaerr  = np.zeros( romega.shape, np.float)
+    wripaca.omegacalcclose(gcalc,
+                           pre,
+                           posti,
+                           axis,
+                           romega,
+                           romegacalc,
+                           romegaerr,
+                           pars.get('wavelength'),
+                           )
+    return 180*romegacalc/np.pi, 180*romegaerr/np.pi
 
 
 
+def weightsfromdiff( diff, nmedians=2):
+    assert diff.shape[0] == 3
+    ng = diff.shape[1]
+    modlen = np.sqrt( (diff*diff).sum(axis=0) )
+    middle = np.median(modlen)
+    norm = modlen/(middle*nmedians)
+    wt = np.exp( -norm*norm )
+    return wt
+    if 0:
+        pylab.clf()
+        pylab.subplot(121)
+        pylab.hist( modlen, bins=50 )
+        pylab.subplot(122)
+        pylab.plot( modlen, wt, ",")
+        pylab.show()
 
 
-
-
-
-def fitgrainfunc( cf, gr, pars, refinables ):
-    cf.omega = (180.0/np.pi)*geometry.omegacalc_ub( gr.ubi, cf.hkl, pars,
-            cf.omegaobs*np.pi/180.0 )
+def fitgrainfunc( cf, gr, pars, refinables, omegaslop = 0.1 ):
+#    print cf.omegaobs[:10]
+    omc, ome = omegacalc_ub( gr.ubi, cf.hkl, pars,
+                cf.omegaobs*np.pi/180.0 )
+    
+    #
+    # wt =1 - np.exp(-ome*ome/omegaslop)
+    # pylab.plot( ome, wt, ",")
+    # pylab.show()
+    cf.omega = np.where( ome < omegaslop, omc, cf.omegaobs )
+    
     gobs, Dg = geometry.Derivativegobs( cf, gr, pars, refinables )
     gcalc, dGcalc = geometry.derivativegcalc( gr, gobs )
     diff = gobs - gcalc
@@ -207,69 +216,34 @@ def fitgrainfunc( cf, gr, pars, refinables ):
     return diff, Ddiff
     
 
-def fitgrain( cf, gr, pars, refinables, ncycle=20, shoelim=1e-4, quiet = False):
-    """
-    Fits a grain to data in colfile using pars and varying variables
-    """
-    cycle = 0
-    shoemax = None
-    while cycle < ncycle: # Break when converged
-        start = time.clock()
-        if shoemax is not None:
-            if shoemax < shoelim:
-                break
-        # FIXME: Omega column
-        diff, Ddiff = fitgrainfunc( cf, gr, pars, refinables )
-        vars = Ddiff.keys()
-        imat, shifts, chi2 = lsq( diff, Ddiff, None, vars )
-       # if not quiet:
-        print "chi2",chi2,
-        shoemax  =applyshifts( shifts, imat, chi2, pars, gr, vars, quiet=quiet )
-
-        if not quiet:
-            print "Max shift/e % 6.2g"%(shoemax)
-
-        if 0:
-            gr.ubi = makehexagonal( gr.ubi )
-        # make W from lsq
-
-        cellparerrors(gr, vars, imat, chi2, quiet=quiet)
-        cycle += 1
-    return gr, pars
-
-
-def fitmanygrains( cfs, grs, pars, refinables ):
+def fitmanygrains( cfs, grs, pars, refinables, symmetrise ):
     mlsq = many_grain_lsq(len(grs), refinables)
+    e = 100
+    h = 0
+    totalerr = 0
     for i, cf, gr in zip(range(len(cfs)), cfs, grs):
         pars.set('t_x', gr.translation[0])
         pars.set('t_y', gr.translation[1])
         pars.set('t_z', gr.translation[2])
         diff, Ddiff = fitgrainfunc( cf, gr, pars, refinables )
-        print i, (diff*diff).sum()
+        wt = weightsfromdiff( diff )
+        np.multiply( diff, wt, diff)
+        for p in Ddiff.keys():
+#            print p,wt.shape, Ddiff[p].shape, diff.shape
+            np.multiply( Ddiff[p], wt, Ddiff[p] )
+        drlv = (diff*diff).sum(axis=0)
+        hnew,e = np.histogram( drlv, bins=e )
+        h = hnew + h
+        totalerr += drlv.sum()
         mlsq.addgrain( i, diff, Ddiff )
     imat,shifts = mlsq.solve()
-    mlsq.applyshifts( pars, grs )
-    return pars
+    max_shift = mlsq.applyshifts( pars, grs )
+    if symmetrise:
+        grs = [ grain( makehexagonal(g.ubi), g.translation) for g in grs ]
 
-# Unit cell esds
-
-# brain dead method
-
-
-
-
-
-# Now would like to see errors projected onto pixel coords or omega/tth/eta etc
-
-def project_diff_on_variable(diff, variable, Derivs):
-    g = Derivs[variable]
-    modg = np.sqrt( (g*g).sum(axis=0) )
-    ghat = g/modg
-    # next is a scalar quantity
-    sdiff_along_ghat =  (ghat * diff).sum(axis=0)
-    # This difference in units of g
-    return sdiff_along_ghat/modg
-
+    #pylab.plot( (e[1:]+e[:-1])*0.5, np.log(h+0.5), "o-")
+    print "totalerr",totalerr, max_shift
+    return pars, grs, max_shift
 
 
 
@@ -311,7 +285,8 @@ class dummycf:
         assert len(hkl) == self.nrows
 
 def assignpeaks( gr, pars, colfile, tol=None, omegatol=0.2 ):
-    labels = np.zeros( colfile.nrows )
+    #print "entry to assignpeaks"
+    #print "omega[:10]",colfile.omega[:10]
     cyf = cyfit.cyfit(pars)
     cyf.setscfc( colfile.sc, colfile.fc )
     hkl = np.zeros( cyf.XL.shape, np.float)
@@ -342,38 +317,51 @@ def assignpeaks( gr, pars, colfile, tol=None, omegatol=0.2 ):
                            )
     # OK, now we will accept anything within omegatol
     if 0:
-        pylab.hist(romegaerr, bins=50)
         pylab.figure()
-        pylab.plot(r_omega, romegaerr,",")
+        pylab.plot(r_omega - romegacalc, romegaerr,",")
         pylab.show()
-    r_omega = np.where( romegaerr < omegatol*np.pi/180.,  romegacalc, r_omega )
+    r_omega = np.where( abs(romegaerr) < omegatol*np.pi/180.,  romegacalc, r_omega )
     cyf.hkl( colfile.sc, colfile.fc, r_omega, gr, hkl, kcalc )
     drlv_omegafree = drlv.copy()
     wripaca.ih_drlv( hkl, drlv_omegafree )
-    m = drlv < tol
+    m = drlv_omegafree < tol
     sc = colfile.sc[m]
     fc = colfile.fc[m]
     omegaobs = colfile.omega[m].astype(np.float)
     omega = colfile.omega[m].astype(np.float)
     hkl = hkl[m]
     print "Got",m.sum(),"peaks",
+#    print "end of peak selection"
+#    print "colfile.omega[:10]",colfile.omega[:10]
+#    print "omega[:10]", omega[:10]
+#    print "omegaobs[:10]",omegaobs[:10]
     if 0:
         pylab.ion()
+        pylab.clf()
         pylab.title("tol = %f"%(tol))
         pylab.hist( drlv, bins=np.arange(0,0.05,0.001))
         pylab.hist( drlv_omegafree, bins=np.arange(0,0.05,0.001))
         pylab.show()
         raw_input("OK?")
-
+    omegaobs = (180./np.pi)*np.array([wripaca.anglediff(o,0.0) for o in
+        omegaobs*np.pi/180.])
     return dummycf( sc, fc, omega, omegaobs, hkl )
 
-def fitallgrains( gfile, pfile, cfile, ngrains = None):
+def fitallgrains( gfile, pfile, cfile, ngrains = None, tolerance=0.02,
+        symmetrise = False):
     colfile = loadcolfile( cfile )
-    grains = read_grain_file( gfile )
+    if symmetrise:
+        grains = [ grain( makehexagonal(g.ubi), g.translation) for g in
+            read_grain_file( gfile ) ]
+    else:
+        grains = read_grain_file( gfile ) 
     pars = read_par_file( pfile )
 
     variables = [ 't_x','t_y', 't_z', 'y_center',  'tilt_y', 'tilt_z',
                        'tilt_x',  'distance', 'wedge']
+ #   variables = [ 't_x','t_y', 't_z']
+    #, 'y_center',  'tilt_y', 'tilt_z',
+    #                   'tilt_x',  'distance', 'wedge']
     pfitted = []
     grs = []
     cfs = []
@@ -385,30 +373,20 @@ def fitallgrains( gfile, pfile, cfile, ngrains = None):
     for i in range(ng):
         print "***",i,
         gr = grains[i]
-        cf = assignpeaks( gr, pars, colfile, tol = 0.02 )
+        cf = assignpeaks( gr, pars, colfile, tol = tolerance )
         cfs.append(cf)
         grs.append(gr)
+
     pi = parameters( **pars.parameters )
-    refpars = fitmanygrains( cfs, grs, pi, variables )
-    for i in range(3):
-        refpars = fitmanygrains( cfs, grs, refpars, variables )
-
+    refpars, grs, shoemax = fitmanygrains( cfs, grs, pi, variables, symmetrise )
+    for i in range(10):
+        refpars, grs, shoemax = fitmanygrains( cfs, grs, refpars, variables, symmetrise )
+        if shoemax < 1:
+            break
+    pylab.show()
     if 0:
-        pi = parameters( **pars.parameters )
-        pi.set('t_x', gr.translation[0])
-        pi.set('t_y', gr.translation[1])
-        pi.set('t_z', gr.translation[2])
-        diff, Ddiff = fitgrainfunc( cf, gr, pi, variables )
-        print "%.5g"%((diff*diff).ravel().sum()),
-        gr, pfit = fitgrain( cf, gr, pi, variables, quiet=True )
-        grains[i] = gr
-        pfitted.append( pfit )
-        diff, Ddiff = fitgrainfunc( cf, gr, pfit, variables )
-        print "%.5g"%((diff*diff).ravel().sum())
-
-        if 0:
-            v = Ddiff.keys()
-            for v in ['y_center', 'distance']:
+        v = Ddiff.keys()
+        for v in ['y_center', 'distance']:
                 pylab.figure(1)
                 pylab.title("Versus omega")
                 pylab.plot( cf.omega, project_diff_on_variable( diff, v, Ddiff) , ",", label=v) 
@@ -426,12 +404,15 @@ def fitallgrains( gfile, pfile, cfile, ngrains = None):
                 raw_input()
 
 
-
-    write_grain_file( gfile+".fit", grains)
-    
+    print "Writing grains to",gfile
+    write_grain_file( gfile, grs)
+    print "Writing pars to",pfile
+    refpars.saveparameters( pfile )
+    print indexing.ubitocellpars( grs[0].ubi )
 
 
 if __name__=="__main__":
-    fitallgrains( sys.argv[1], sys.argv[2], sys.argv[3], ngrains = None )
+    fitallgrains( sys.argv[1], sys.argv[2], sys.argv[3], ngrains = None,
+            tolerance=float(sys.argv[4]) )
 
 
